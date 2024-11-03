@@ -8,7 +8,7 @@ CORS(app)
 
 
 # Register blueprints here
-app.register_blueprint(model_routes.model_bp)
+app.register_blueprint(model_routes.stock_bp)
 
 if __name__ == '__main__':
     app.run()
