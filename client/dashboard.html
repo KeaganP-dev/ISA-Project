@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,7 +41,8 @@
             border-collapse: collapse;
         }
 
-        .admin-table th, .admin-table td {
+        .admin-table th,
+        .admin-table td {
             border: 1px solid #ddd;
             padding: 8px;
         }
@@ -51,39 +53,40 @@
         }
     </style>
 </head>
+
 <body>
 
-<button id="seeUserDetails">See User Details</button>
-<div id="userDetails"></div>
+    <button id="seeUserDetails">See User Details</button>
+    <div id="userDetails"></div>
 
-<div class="navbar">
-    <div class="tab" onclick="showContent('userInfo')">User Info</div>
-    <div class="tab" id="adminTab" style="display: none;" onclick="showContent('adminInfo')">Admin Info</div>
-</div>
+    <div class="navbar">
+        <div class="tab" onclick="showContent('userInfo')">User Info</div>
+        <div class="tab" id="adminTab" style="display: none;" onclick="showContent('adminInfo')">Admin Info</div>
+    </div>
 
-<div id="userInfo" class="content active">
-    <h1>Welcome to Your Dashboard</h1>
-    <p>Enter some text below:</p>
-    <input type="text" id="userInput" placeholder="Type something...">
-    <button onclick="handleSubmit()">Submit</button>
-</div>
+    <div id="userInfo" class="content active">
+        <h1>Welcome to Your Dashboard</h1>
+        <p>Enter some text below:</p>
+        <input type="text" id="userInput" placeholder="Type something...">
+        <button onclick="handleSubmit()">Submit</button>
+    </div>
 
-<div id="adminInfo" class="content">
-    <h1>Admin Dashboard</h1>
-    <table class="admin-table" id="usersTable">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>API Calls</th>
-            </tr>
-        </thead>
-        <tbody id="usersTableBody">
-            <!-- User data will be populated here -->
-        </tbody>
-    </table>
-</div>
-<script>
+    <div id="adminInfo" class="content">
+        <h1>Admin Dashboard</h1>
+        <table class="admin-table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>API Calls</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <!-- User data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+    <script>
         document.getElementById('seeUserDetails').addEventListener('click', async () => {
             const response = await fetch('http://localhost:3000/users', {
                 method: 'GET',
@@ -107,7 +110,34 @@
                 alert('Could not fetch user details. Please try again later.');
             }
         });
-</script>
+
+        async function handleSubmit() {
+            const userInput = document.getElementById('userInput').value;
+            if (!userInput) {
+                alert('Please enter a symbol');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/predict/${userInput}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`Prediction data: ${JSON.stringify(data)}`);
+                } else {
+                    console.error('Error fetching prediction:', await response.text());
+                    alert('Failed to fetch prediction. Please try again later.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while making the request.');
+            }
+        }
+    </script>
 
 </body>
+
 </html>
