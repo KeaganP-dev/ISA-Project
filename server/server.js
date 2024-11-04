@@ -14,8 +14,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-app.options('*', cors());
-
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'https://isa-project-client.netlify.app');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -36,8 +34,6 @@ const pool = mariadb.createPool({
     database: 'userAuth',
     connectionLimit: 5
 });
-
-app.options('*', cors());
 
 app.get('/predict/:symbol', async (req, res) => {
     const { symbol } = req.params;
