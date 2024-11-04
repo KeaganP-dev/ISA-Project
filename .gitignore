@@ -3,3 +3,4 @@ api/.idea
 api/data_collection/__pycache__
 api/routes/__pycache__
 api/models/__pycache__
+server/node_modules/
