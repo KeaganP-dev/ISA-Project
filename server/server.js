@@ -14,11 +14,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
+app.options('*', cors());
+
 app.use(cors({
     origin: ['https://isa-project-client.netlify.app', 'https://www.isa-project-client.netlify.app', 'https://keaganpurtell.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'JSON'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
 }));
 app.use(bodyParser.json());
 
