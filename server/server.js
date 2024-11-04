@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 const mariadb = require('mariadb');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 443;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors({ 
