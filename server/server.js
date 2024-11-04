@@ -26,7 +26,7 @@ app.use(cookieParser());
 
 // MariaDB connection pool
 const pool = mariadb.createPool({
-    host: 'localhost',
+    host: '127.0.0.1',
     user: 'appuser',
     password: 'password',
     database: 'userAuth',
