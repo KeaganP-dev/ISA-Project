@@ -14,8 +14,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-app.options('*', cors());
-
 app.use(cors({
     origin: 'https://isa-project-client.netlify.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -40,18 +38,50 @@ app.options('*', cors());
 
 app.get('/predict/:symbol', async (req, res) => {
     const { symbol } = req.params;
+    const token = req.cookies.token;  // Get the token from cookies
+
+    // Check if token is present
+    if (!token) {
+        return res.status(401).send('Unauthorized: No token provided');
+    }
 
     try {
-        // Making a GET request to the external API
-        const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const userEmail = decoded.email;
 
-        // Sending the response data back to the client
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            // Update the requests count in the database
+            const updateQuery = `
+                UPDATE users
+                SET requests = requests + 1
+                WHERE email = ?
+            `;
+            await conn.query(updateQuery, [userEmail]);
+
+            console.log(`Requests count updated for user: ${userEmail}`);
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            return res.status(500).send('Database error');
+        } finally {
+            if (conn) conn.end();
+        }
+
+        // Fetch data from the external API
+        const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
         res.status(200).json(response.data);
     } catch (error) {
-        console.error('Error fetching data from API:', error.message);
+        console.error('Error:', error.message);
+        if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(403).send('Invalid token');
+        }
         res.status(500).send('Failed to fetch data from external API');
     }
 });
+
 
 // Register endpoint
 app.post('/register', async (req, res) => {
@@ -91,7 +121,7 @@ app.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).send('Invalid email or password');
 
-        const isAdmin = user.email === 'admin';
+        const isAdmin = user.email === 'admin@admin.com';
 
         const token = jwt.sign({ userId: user.id, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         res.cookie('token', token, {
