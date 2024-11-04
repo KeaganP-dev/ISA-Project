@@ -53,6 +53,7 @@ app.get('/predict/:symbol', async (req, res) => {
 
         let conn;
         let user;
+        let outOfRequests = false;
         try {
             conn = await pool.getConnection();
 
@@ -62,7 +63,7 @@ app.get('/predict/:symbol', async (req, res) => {
             user = userData;
             
             // Check if the user has exceeded the request limit
-            const outOfRequests = user.requests >= REQUEST_LIMIT;
+            outOfRequests = user.requests >= REQUEST_LIMIT;
 
             // Update the requests count in the database
             const updateQuery = `
