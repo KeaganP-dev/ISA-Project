@@ -49,16 +49,27 @@ app.get('/predict/:symbol', async (req, res) => {
         // Verify the token
         const decoded = jwt.verify(token, JWT_SECRET);
         const userEmail = decoded.email;
+        const REQUEST_LIMIT = 20;
 
         let conn;
+        let user;
         try {
             conn = await pool.getConnection();
+
+            const [userData] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
+            if (!userData) return res.status(404).send('User not found');
+
+            user = userData;
+            
+            // Check if the user has exceeded the request limit
+            const outOfRequests = user.requests >= REQUEST_LIMIT;
 
             // Update the requests count in the database
             const updateQuery = `
                 UPDATE users
                 SET requests = requests + 1
-                WHERE email = ?
+                WHERE email = ?;
+                
             `;
             await conn.query(updateQuery, [userEmail]);
 
@@ -72,6 +83,11 @@ app.get('/predict/:symbol', async (req, res) => {
 
         // Fetch data from the external API
         const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
+
+        if (outOfRequests) {
+            response.body += '\n\nYou have exceeded the request limit.';
+        }
+
         res.status(200).json(response.data);
     } catch (error) {
         console.error('Error:', error.message);
