@@ -127,6 +127,9 @@
                 if (response.ok) {
                     const data = await response.json();
                     alert(`Prediction data: ${JSON.stringify(data)}`);
+                    if (data.warning) {
+                        alert(data.warning);
+                    }
                 } else {
                     console.error('Error fetching prediction:', await response.text());
                     alert('Failed to fetch prediction. Please try again later.');

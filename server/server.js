@@ -86,7 +86,7 @@ app.get('/predict/:symbol', async (req, res) => {
         const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
 
         if (outOfRequests) {
-            response.warning = 'You have exceeded the request limit.';
+            response.data.warning = 'You have exceeded the request limit.';
         }
 
         res.status(200).json(response.data);
