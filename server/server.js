@@ -14,13 +14,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'https://isa-project-client.netlify.app');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-});
+app.options('*', cors());
+
+app.use(cors({
+    origin: 'https://isa-project-client.netlify.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
+}));
 
 // Middlewares
 app.use(bodyParser.json());
@@ -34,6 +35,8 @@ const pool = mariadb.createPool({
     database: 'userAuth',
     connectionLimit: 5
 });
+
+app.options('*', cors());
 
 app.get('/predict/:symbol', async (req, res) => {
     const { symbol } = req.params;
