@@ -15,8 +15,10 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors({
-    origin: ['https://isa-project-client.netlify.app', 'https://www.isa-project-client.netlify.app', 'http://127.0.0.1:5500'],
-    credentials: true
+    origin: ['https://isa-project-client.netlify.app', 'https://www.isa-project-client.netlify.app', 'https://keaganpurtell.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'JSON'],
 }));
 app.use(bodyParser.json());
 
