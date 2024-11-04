@@ -90,6 +90,34 @@ app.get('/dashboard', (req, res) => {
     }
 });
 
+app.get('/users', (req, res) => {
+    // Assuming you have a middleware that verifies the JWT token and sets req.user
+    const token = req.headers.authorization?.split(' ')[1]; // Get token from headers
+
+    if (!token) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).send('Invalid token');
+        }
+
+        // Check if the user is an admin
+        if (user.userId === 'admin') {
+            const query = 'SELECT first_name, email, requests FROM users';
+            db.query(query, (error, results) => {
+                if (error) {
+                    return res.status(500).send('Database error');
+                }
+                res.json(results);
+            });
+        } else {
+            res.status(403).send('Forbidden: Admins only');
+        }
+    });
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
