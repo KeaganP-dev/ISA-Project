@@ -7,14 +7,16 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const mariadb = require('mariadb');
+const axios = require('axios');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-app.use(cors({ 
-    origin: 'http://localhost:43635', 
-    credentials: true 
+app.use(cors({
+    origin: 'http://localhost:43635',
+    credentials: true
 }));
 app.use(bodyParser.json());
 
@@ -31,6 +33,21 @@ const pool = mariadb.createPool({
     connectionLimit: 5
 });
 
+app.get('/predict/:symbol', async (req, res) => {
+    const { symbol } = req.params;
+
+    try {
+        // Making a GET request to the external API
+        const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
+
+        // Sending the response data back to the client
+        res.status(200).json(response.data);
+    } catch (error) {
+        console.error('Error fetching data from API:', error.message);
+        res.status(500).send('Failed to fetch data from external API');
+    }
+});
+
 // Register endpoint
 app.post('/register', async (req, res) => {
     const { firstName, email, password } = req.body;
@@ -39,7 +56,7 @@ app.post('/register', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        
+
         const [existingUser] = await conn.query('SELECT * FROM users WHERE email = ?', [email]);
         if (existingUser) return res.status(400).send('User already exists');
 
@@ -62,7 +79,7 @@ app.post('/login', async (req, res) => {
     let conn;
     try {
         conn = await pool.getConnection();
-        
+
         const [user] = await conn.query('SELECT * FROM users WHERE email = ?', [email]);
         if (!user) return res.status(400).send('Invalid email or password');
 
