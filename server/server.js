@@ -125,8 +125,11 @@ app.post('/login', async (req, res) => {
 
         const token = jwt.sign({ userId: user.id, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         res.cookie('token', token, {
-            httpOnly: false,  // Makes it inaccessible to JavaScript on the client (good for security)
+            httpOnly: true,  // More secure to set this to true for a session token
+            sameSite: 'None',  // Required for cross-site cookies
+            secure: true       // Required for cookies over HTTPS
         });
+        
         res.send('Login successful');
     } catch (err) {
         res.status(500).send('Server error');
