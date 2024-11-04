@@ -2,3 +2,4 @@ api/__pycache__
 api/.idea
 api/data_collection/__pycache__
 api/routes/__pycache__
+api/models/__pycache__
