@@ -1,24 +1,31 @@
 from flask import Blueprint, request, jsonify
-from data_collection.yahoo_finance_data import StockAnalyzer
+from models.light_yagami_v1 import StockPredictor, StockAnalyzer
 
 stock_bp = Blueprint('stock', __name__)
 analyzer = StockAnalyzer()
 
 
-@stock_bp.route('/fetch-history', methods=['GET'])
-def fetch_history():
-    ticker = request.args.get('ticker')
-    period = request.args.get('period', '1y')
-    interval = request.args.get('interval', '1d')
+@stock_bp.route('/predict', methods=['GET'])
+def predict_price():
+    ticker_symbol = request.args.get('symbol')
+    if not ticker_symbol:
+        return jsonify({"error": "Ticker symbol is required"}), 400
 
-    if not ticker:
-        return jsonify({'error': 'Ticker symbol is required'}), 400
-
+    # Step 1: Initialize the StockAnalyzer and fetch/prepare data
+    analyzer = StockAnalyzer()
     try:
-        history = analyzer.fetch_history(ticker, period=period, interval=interval)
-        return history.to_json()  # Converts the DataFrame to JSON format
+        analyzer.fetch_history(ticker_symbol)
+        X, y = analyzer.prepare_features()
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
+    # Step 2: Initialize the StockPredictor, train the model, and make a prediction for the last day
+    predictor = StockPredictor()
+    predictor.train(X, y)
+    last_day_info = X.iloc[[-1]]  # Extract the last row of feature data
+    last_day_prediction = predictor.predict(last_day_info)
+
+    return jsonify({"symbol": ticker_symbol, "predicted_price": last_day_prediction[0]})
 
 
 @stock_bp.route('/summary-info', methods=['GET'])
@@ -31,50 +38,5 @@ def summary_info():
     try:
         summary = analyzer.get_summary_info(ticker)
         return jsonify(summary)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@stock_bp.route('/moving-average', methods=['GET'])
-def moving_average():
-    ticker = request.args.get('ticker')
-    window = request.args.get('window', 20, type=int)
-
-    if not ticker:
-        return jsonify({'error': 'Ticker symbol is required'}), 400
-
-    try:
-        analyzer.fetch_history(ticker)  # Ensure historical data is loaded
-        moving_avg = analyzer.calculate_moving_average(window=window)
-        return moving_avg.to_json()  # Converts the DataFrame to JSON format
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@stock_bp.route('/max-min-price', methods=['GET'])
-def max_min_price():
-    ticker = request.args.get('ticker')
-
-    if not ticker:
-        return jsonify({'error': 'Ticker symbol is required'}), 400
-
-    try:
-        analyzer.fetch_history(ticker)  # Ensure historical data is loaded
-        max_min = analyzer.get_max_min_price()
-        return jsonify(max_min)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@stock_bp.route('/pe-ratios', methods=['GET'])
-def pe_ratios():
-    ticker = request.args.get('ticker')
-
-    if not ticker:
-        return jsonify({'error': 'Ticker symbol is required'}), 400
-
-    try:
-        pe_ratios = analyzer.get_pe_ratios(ticker)
-        return jsonify(pe_ratios)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

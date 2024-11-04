@@ -1,3 +1,5 @@
 flask~=3.0.3
 flask-cors>=5.0.0
 yfinance>=0.2.48
+kagglehub>=0.3.3
+scikit-learn>=1.5.2
