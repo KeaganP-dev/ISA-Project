@@ -98,7 +98,8 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ email, password }),
+                credentials: 'include' // This ensures the cookie is saved
             });
             const result = await response.text();
             alert(result);
@@ -110,6 +111,7 @@
             alert('Error logging in: ' + error);
         }
     }
+
 </script>
 
 </body>

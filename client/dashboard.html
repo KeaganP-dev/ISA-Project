@@ -53,6 +53,9 @@
 </head>
 <body>
 
+<button id="seeUserDetails">See User Details</button>
+<div id="userDetails"></div>
+
 <div class="navbar">
     <div class="tab" onclick="showContent('userInfo')">User Info</div>
     <div class="tab" id="adminTab" style="display: none;" onclick="showContent('adminInfo')">Admin Info</div>
@@ -81,56 +84,29 @@
     </table>
 </div>
 <script>
-    // Check if user is admin
-    const token = localStorage.getItem('token');
-
-    async function fetchUsers() {
-        try {
+        document.getElementById('seeUserDetails').addEventListener('click', async () => {
             const response = await fetch('http://localhost:3000/users', {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                credentials: 'include' // Include cookies in the request
             });
+
+            console.log(response);
 
             if (response.ok) {
                 const users = await response.json();
-                const usersTableBody = document.getElementById('usersTableBody');
+                const userDetailsDiv = document.getElementById('userDetails');
+                userDetailsDiv.innerHTML = ''; // Clear previous details
+
+                // Display user details
                 users.forEach(user => {
-                    const row = `<tr>
-                                    <td>${user.first_name}</td>
-                                    <td>${user.email}</td>
-                                    <td>${user.requests}</td>
-                                 </tr>`;
-                    usersTableBody.innerHTML += row;
+                    const userDetail = `<p>Name: ${user.first_name}, Email: ${user.email}, Requests: ${user.requests}</p>`;
+                    userDetailsDiv.innerHTML += userDetail;
                 });
             } else {
-                console.error('Failed to fetch users:', await response.text());
+                console.error('Failed to fetch user details:', await response.text());
+                alert('Could not fetch user details. Please try again later.');
             }
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        }
-    }
-
-    function showContent(contentId) {
-        document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
-        document.getElementById(contentId).classList.add('active');
-    }
-
-    // Fetch users if admin
-    if (token) {
-        const decoded = jwt.decode(token);
-        if (decoded.userId === 'admin') {
-            document.getElementById('adminTab').style.display = 'block';
-            fetchUsers();
-        }
-    }
-
-    function handleSubmit() {
-        const input = document.getElementById('userInput').value;
-        alert(`You entered: ${input}`);
-        // Code to send data to the server could go here.
-    }
+        });
 </script>
 
 </body>

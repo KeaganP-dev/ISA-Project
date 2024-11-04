@@ -12,7 +12,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-app.use(cors({ origin: 'http://localhost:43635', credentials: true }));
+app.use(cors({ 
+    origin: 'http://localhost:43635', 
+    credentials: true 
+}));
 app.use(bodyParser.json());
 
 // Middlewares
@@ -66,8 +69,12 @@ app.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).send('Invalid email or password');
 
-        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
-        res.cookie('token', token, { httpOnly: true });
+        const isAdmin = user.email === 'admin';
+
+        const token = jwt.sign({ userId: user.id, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
+        res.cookie('token', token, {
+            httpOnly: false,  // Makes it inaccessible to JavaScript on the client (good for security)
+        });
         res.send('Login successful');
     } catch (err) {
         res.status(500).send('Server error');
@@ -77,46 +84,46 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Protected route (post-login page)
-app.get('/dashboard', (req, res) => {
+app.get('/users', async (req, res) => {
     const token = req.cookies.token;
-    if (!token) return res.status(401).send('Access Denied');
 
-    try {
-        const verified = jwt.verify(token, JWT_SECRET);
-        res.send('Welcome to your dashboard');
-    } catch (err) {
-        res.status(400).send('Invalid Token');
-    }
-});
-
-app.get('/users', (req, res) => {
-    // Assuming you have a middleware that verifies the JWT token and sets req.user
-    const token = req.headers.authorization?.split(' ')[1]; // Get token from headers
-
+    // Check if token is present
     if (!token) {
         return res.status(401).send('Unauthorized');
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).send('Invalid token');
+    try {
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        // Check if the user has admin privileges
+        if (!decoded.isAdmin) {
+            return res.status(403).send('Forbidden: Admins only');
         }
 
-        // Check if the user is an admin
-        if (user.userId === 'admin') {
+        // Database connection
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            // Query all users' data (first_name, email, requests)
             const query = 'SELECT first_name, email, requests FROM users';
-            db.query(query, (error, results) => {
-                if (error) {
-                    return res.status(500).send('Database error');
-                }
-                res.json(results);
-            });
-        } else {
-            res.status(403).send('Forbidden: Admins only');
+            const results = await conn.query(query);
+
+            // Send results as JSON
+            res.json(results);
+        } catch (dbError) {
+            console.error(dbError);
+            res.status(500).send('Database error');
+        } finally {
+            if (conn) conn.end();
         }
-    });
+    } catch (jwtError) {
+        console.error(jwtError);
+        res.status(403).send('Invalid token');
+    }
 });
+
 
 // Start server
 app.listen(PORT, () => {
