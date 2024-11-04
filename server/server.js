@@ -14,9 +14,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-app.use(cors({
-    origin: 'http://localhost:43635',
-    credentials: true
+app.use(cors({ 
+    origin: ['https://isa-project-client.netlify.app', 'https://www.isa-project-client.netlify.app'], 
+    credentials: true 
 }));
 app.use(bodyParser.json());
 
