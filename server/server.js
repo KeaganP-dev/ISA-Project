@@ -16,12 +16,13 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 app.options('*', cors());
 
-app.use(cors({
-    origin: ['https://isa-project-client.netlify.app', 'https://www.isa-project-client.netlify.app', 'https://keaganpurtell.com'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
-}));
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', 'https://isa-project-client.netlify.app');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    next();
+});
 
 // Middlewares
 app.use(bodyParser.json());
