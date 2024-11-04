@@ -123,7 +123,7 @@ app.post('/login', async (req, res) => {
 
         const isAdmin = user.email === 'admin@admin.com';
 
-        const token = jwt.sign({ userId: user.id, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ email: user.email, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         res.cookie('token', token, {
             httpOnly: true,  // More secure to set this to true for a session token
             sameSite: 'None',  // Required for cross-site cookies
