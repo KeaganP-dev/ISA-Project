@@ -1,0 +1,45 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar {
+    display: flex;
+    background-color: #4CAF50;
+    padding: 10px;
+    color: white;
+}
+
+.tab {
+    margin-right: 20px;
+    cursor: pointer;
+    padding: 10px;
+    color: white;
+}
+
+.content {
+    padding: 20px;
+    display: none;
+}
+
+.active {
+    display: block;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.admin-table th {
+    background-color: #4CAF50;
+    color: white;
+}
