@@ -5,80 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        .navbar {
-            display: flex;
-            background-color: #4CAF50;
-            padding: 10px;
-            color: white;
-        }
-
-        .tab {
-            margin-right: 20px;
-            cursor: pointer;
-            padding: 10px;
-            color: white;
-        }
-
-        .content {
-            padding: 20px;
-            display: none;
-        }
-
-        .active {
-            display: block;
-        }
-
-        .admin-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .admin-table th,
-        .admin-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-
-        .admin-table th {
-            background-color: #4CAF50;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-
-    <button id="seeUserDetails">See User Details</button>
+    <button id="seeUserDetails"></button>
     <div id="userDetails"></div>
 
     <div class="navbar">
-        <div class="tab" onclick="showContent('userInfo')">User Info</div>
-        <div class="tab" id="adminTab" style="display: none;" onclick="showContent('adminInfo')">Admin Info</div>
+        <div class="tab" onclick="showContent('userInfo')"></div>
+        <div class="tab" id="adminTab" style="display: none;" onclick="showContent('adminInfo')"></div>
     </div>
 
     <div id="userInfo" class="content active">
-        <h1>Welcome to Your Dashboard</h1>
-        <p>Enter some text below:</p>
-        <input type="text" id="userInput" placeholder="Type something...">
-        <button onclick="handleSubmit()">Submit</button>
+        <h1 id="dashboardWelcome"></h1>
+        <p id="dashboardText"></p>
+        <input type="text" id="userInput" placeholder="">
+        <button id="submitButton" onclick="handleSubmit()"></button>
     </div>
 
     <div id="adminInfo" class="content">
-        <h1>Admin Dashboard</h1>
+        <h1 id="adminDashboardTitle"></h1>
         <table class="admin-table" id="usersTable">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>API Calls</th>
+                    <th id="adminName"></th>
+                    <th id="adminEmail"></th>
+                    <th id="adminApiCalls"></th>
                 </tr>
             </thead>
             <tbody id="usersTableBody">
@@ -86,58 +39,9 @@
             </tbody>
         </table>
     </div>
-    <script>
-        document.getElementById('seeUserDetails').addEventListener('click', async () => {
-            const response = await fetch('http://localhost:3000/users', {
-                method: 'GET',
-                credentials: 'include' // Include cookies in the request
-            });
 
-            console.log(response);
-
-            if (response.ok) {
-                const users = await response.json();
-                const userDetailsDiv = document.getElementById('userDetails');
-                userDetailsDiv.innerHTML = ''; // Clear previous details
-
-                // Display user details
-                users.forEach(user => {
-                    const userDetail = `<p>Name: ${user.first_name}, Email: ${user.email}, Requests: ${user.requests}</p>`;
-                    userDetailsDiv.innerHTML += userDetail;
-                });
-            } else {
-                console.error('Failed to fetch user details:', await response.text());
-                alert('Could not fetch user details. Please try again later.');
-            }
-        });
-
-        async function handleSubmit() {
-            const userInput = document.getElementById('userInput').value;
-            if (!userInput) {
-                alert('Please enter a symbol');
-                return;
-            }
-
-            try {
-                const response = await fetch(`http://localhost:3000/predict/${userInput}`, {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    alert(`Prediction data: ${JSON.stringify(data)}`);
-                } else {
-                    console.error('Error fetching prediction:', await response.text());
-                    alert('Failed to fetch prediction. Please try again later.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('An error occurred while making the request.');
-            }
-        }
-    </script>
-
+    <script src="lang/messages/en/user.js"></script>
+    <script src="js/dashboard.js"></script>
 </body>
 
 </html>

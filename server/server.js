@@ -11,14 +11,15 @@ const axios = require('axios');
 
 
 const app = express();
-const PORT = process.env.PORT || 443;
+const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors({
-    origin: ['https://isa-project-client.netlify.app', 'https://www.isa-project-client.netlify.app', 'http://127.0.0.1:5500'],
-    credentials: true
+    origin: 'https://isa-project-client.netlify.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Set-Cookie'],
 }));
-app.use(bodyParser.json());
 
 // Middlewares
 app.use(bodyParser.json());
@@ -26,27 +27,78 @@ app.use(cookieParser());
 
 // MariaDB connection pool
 const pool = mariadb.createPool({
-    host: 'localhost',
+    host: '127.0.0.1',
     user: 'appuser',
     password: 'password',
     database: 'userAuth',
     connectionLimit: 5
 });
 
+app.options('*', cors());
+
 app.get('/predict/:symbol', async (req, res) => {
     const { symbol } = req.params;
+    const token = req.cookies.token;  // Get the token from cookies
+
+    // Check if token is present
+    if (!token) {
+        return res.status(401).send('Unauthorized: No token provided');
+    }
 
     try {
-        // Making a GET request to the external API
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const userEmail = decoded.email;
+        const REQUEST_LIMIT = 20;
+
+        let conn;
+        let user;
+        let outOfRequests = false;
+        try {
+            conn = await pool.getConnection();
+
+            const [userData] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
+            if (!userData) return res.status(404).send('User not found');
+
+            user = userData;
+            
+            // Check if the user has exceeded the request limit
+            outOfRequests = user.requests >= REQUEST_LIMIT;
+
+            // Update the requests count in the database
+            const updateQuery = `
+                UPDATE users
+                SET requests = requests + 1
+                WHERE email = ?;
+                
+            `;
+            await conn.query(updateQuery, [userEmail]);
+
+            console.log(`Requests count updated for user: ${userEmail}`);
+        } catch (dbError) {
+            console.error('Database error:', dbError);
+            return res.status(500).send('Database error');
+        } finally {
+            if (conn) conn.end();
+        }
+
+        // Fetch data from the external API
         const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
 
-        // Sending the response data back to the client
+        if (outOfRequests) {
+            response.data.warning = 'You have exceeded the request limit.';
+        }
+
         res.status(200).json(response.data);
     } catch (error) {
-        console.error('Error fetching data from API:', error.message);
+        console.error('Error:', error.message);
+        if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(403).send('Invalid token');
+        }
         res.status(500).send('Failed to fetch data from external API');
     }
 });
+
 
 // Register endpoint
 app.post('/register', async (req, res) => {
@@ -86,12 +138,15 @@ app.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).send('Invalid email or password');
 
-        const isAdmin = user.email === 'admin';
+        const isAdmin = user.email === 'admin@admin.com';
 
-        const token = jwt.sign({ userId: user.id, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ email: user.email, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         res.cookie('token', token, {
-            httpOnly: false,  // Makes it inaccessible to JavaScript on the client (good for security)
+            httpOnly: true,  // More secure to set this to true for a session token
+            sameSite: 'None',  // Required for cross-site cookies
+            secure: true       // Required for cookies over HTTPS
         });
+        
         res.send('Login successful');
     } catch (err) {
         res.status(500).send('Server error');
