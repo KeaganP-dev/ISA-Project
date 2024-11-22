@@ -84,20 +84,13 @@ class StockPredictor:
 
 # Example usage
 if __name__ == "__main__":
-    symbol = 'GOOG'  # Example stock ticker
+    ticker_symbol = 'GOOG'
+    stock_analyzer = StockAnalyzer()
+    stock_analyzer.fetch_history(ticker_symbol)
+    X, y = stock_analyzer.prepare_features()
 
-    # Step 1: Initialize the StockAnalyzer and fetch/prepare data
-    analyzer = StockAnalyzer()
-    analyzer.fetch_history(symbol)
-    X, y = analyzer.prepare_features()
-
-    # Step 2: Initialize the StockPredictor, train the model, and evaluate it
-    predictor = StockPredictor()
-    predictor.train(X, y)
-    predictor.evaluate()
-
-    # Step 3: Get the most recent day's feature data for prediction
+    stock_predictor = StockPredictor()
+    stock_predictor.train(X, y)
     last_day_info = X.iloc[[-1]]  # Extract the last row of feature data
-    last_day_prediction = predictor.predict(last_day_info)
-
-    print("Prediction for the most recent day:", last_day_prediction[0])  # Print the prediction for the last day
+    prediction = stock_predictor.predict(last_day_info)
+    print(f"Predicted closing price for {ticker_symbol}: {prediction[0]}")
