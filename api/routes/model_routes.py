@@ -41,8 +41,9 @@ def summary_info():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @stock_bp.route('/rsi', methods=['GET'])
-def summary_info():
+def rsi():
     ticker = request.args.get('ticker')
 
     if not ticker:
