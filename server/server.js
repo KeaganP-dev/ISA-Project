@@ -249,6 +249,43 @@ app.delete('/users/:email', async (req, res) => {
     }
 });
 
+app.get('/api-consumption', async (req, res) => {
+    const token = req.cookies.token;
+
+    if (!token) {
+        return res.status(401).send('Unauthorized: No token provided');
+    }
+
+    try {
+        // Decode the token to get the user's email
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const userEmail = decoded.email;
+
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            // Fetch the total API consumption for the user
+            const [user] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
+
+            if (!user) {
+                return res.status(404).send('User not found');
+            }
+
+            res.status(200).json({ email: userEmail, totalRequests: user.requests });
+        } catch (err) {
+            console.error('Database error:', err);
+            res.status(500).send('Internal server error');
+        } finally {
+            if (conn) conn.end();
+        }
+    } catch (err) {
+        console.error('Token error:', err);
+        res.status(403).send('Invalid token');
+    }
+});
+
+
 // Ensure all connections require HTTPS (Part 6 of API Server I think)
 app.use((req, res, next) => {
     if (!req.secure) {

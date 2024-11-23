@@ -20,8 +20,14 @@
     <div id="userInfo" class="content active">
         <h1 id="dashboardWelcome"></h1>
         <p id="dashboardText"></p>
-        <input type="text" id="userInput" placeholder="">
-        <button id="submitButton" onclick="handleSubmit()"></button>
+        <button id="fetchApiConsumptionButton" onclick="fetchApiConsumption()" aria-label="Fetch API Usage">Check API
+            Usage</button>
+        <p id="apiConsumption"></p>
+        <input type="text" id="tickerInput" placeholder="Enter ticker symbol">
+        <button id="summaryButton" onclick="getTickerSummary()" aria-label="Get Ticker Summary">Get Ticker
+            Summary</button>
+        <button id="rsiButton" onclick="getRSIData()" aria-label="Get RSI Data">Get RSI Data</button>
+        <button id="predictButton" onclick="getPrediction()" aria-label="Get Prediction">Get Prediction</button>
     </div>
 
     <div id="adminInfo" class="content">

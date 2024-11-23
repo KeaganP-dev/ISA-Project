@@ -36,35 +36,108 @@ document.getElementById('seeUserDetails').addEventListener('click', async () => 
     }
 });
 
-async function handleSubmit() {
-    const userInput = document.getElementById('userInput').value;
-    if (!userInput) {
-        alert(userMessages.userInputPlaceholder);
+async function getTickerSummary() {
+    const ticker = document.getElementById('tickerInput').value;
+    if (!ticker) {
+        alert('Please enter a ticker symbol.');
         return;
     }
 
     try {
-        const response = await fetch(`https://keaganpurtell.com/predict/${userInput}`, {
+        const response = await fetch(`https://keaganpurtell.com/summary-info/${ticker}`, {
             method: 'GET',
-            credentials: 'include'
+            credentials: 'include',
         });
 
         if (response.ok) {
             const data = await response.json();
-            alert(`Prediction data: ${JSON.stringify(data)}`);
-            if (data.warning) {
-                alert(data.warning);
-            }
+            alert(`Summary Info for ${ticker}: ${JSON.stringify(data)}`);
         } else {
-            console.error(userMessages.fetchPredictionError, await response.text());
-            alert(userMessages.fetchPredictionError);
+            const errorText = await response.text();
+            console.error('Error fetching summary info:', errorText);
+            alert('Error fetching summary info. Please try again.');
         }
     } catch (error) {
-        console.error(userMessages.fetchPredictionError, error);
-        alert(userMessages.fetchPredictionError);
+        console.error('Error:', error);
+        alert('Error fetching summary info. Please check your network and try again.');
+    }
+}
+async function getRSIData() {
+    const ticker = document.getElementById('tickerInput').value;
+    if (!ticker) {
+        alert('Please enter a ticker symbol.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://keaganpurtell.com/rsi/${ticker}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert(`RSI Data for ${ticker}: ${JSON.stringify(data)}`);
+        } else {
+            const errorText = await response.text();
+            console.error('Error fetching RSI data:', errorText);
+            alert('Error fetching RSI data. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error fetching RSI data. Please check your network and try again.');
     }
 }
 
+async function getPrediction() {
+    const ticker = document.getElementById('tickerInput').value;
+    if (!ticker) {
+        alert('Please enter a ticker symbol.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://keaganpurtell.com/predict/${ticker}`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert(`Prediction for ${ticker}: ${JSON.stringify(data)}`);
+        } else {
+            const errorText = await response.text();
+            console.error('Error fetching prediction:', errorText);
+            alert('Error fetching prediction. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error fetching prediction. Please check your network and try again.');
+    }
+}
+async function fetchApiConsumption() {
+    const apiConsumptionElement = document.getElementById('apiConsumption');
+    apiConsumptionElement.innerText = 'Fetching your API usage...'; // Show a loading message
+
+    try {
+        const response = await fetch('https://keaganpurtell.com/api-consumption', {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            apiConsumptionElement.innerText = `Total API Requests Used: ${data.totalRequests}`;
+        } else {
+            const errorText = await response.text();
+            console.error('Error fetching API consumption:', errorText);
+            apiConsumptionElement.innerText = 'Error fetching API usage. Please try again.';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        apiConsumptionElement.innerText = 'Error fetching API usage. Please check your connection.';
+    }
+}
 function showContent(contentId) {
     document.querySelectorAll('.content').forEach(content => content.classList.remove('active'));
     document.getElementById(contentId).classList.add('active');
