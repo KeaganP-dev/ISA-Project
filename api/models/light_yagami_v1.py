@@ -31,7 +31,7 @@ class StockAnalyzer:
         self.history_data[f'SMA_{window}'] = self.history_data['Close'].rolling(window=window).mean()
         return self.history_data[[f'SMA_{window}']]
 
-    def calculate_rsi(self, window=14):
+    def calculate_rsi(self,window=14):
         """Calculates the Relative Strength Index (RSI) for the specified window size."""
         delta = self.history_data['Close'].diff(1)
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
@@ -40,6 +40,19 @@ class StockAnalyzer:
         rs = gain / loss
         self.history_data['RSI'] = 100 - (100 / (1 + rs))
         return self.history_data['RSI']
+
+    @staticmethod
+    def static_calculate_rsi(ticker, window=14):
+        """Calculates the Relative Strength Index (RSI) for the specified window size."""
+        stock = yf.Ticker(ticker)
+        history_data = stock.history(period='1y', interval='1d')
+        delta = history_data['Close'].diff(1)
+        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+
+        rs = gain / loss
+        history_data['RSI'] = 100 - (100 / (1 + rs))
+        return history_data['RSI']
 
     def prepare_features(self):
         """Prepare features and target variable for modeling."""

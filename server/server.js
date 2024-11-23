@@ -343,6 +343,10 @@ app.get(
     '/predict/:symbol',
     handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
 );
+app.get(
+    '/rsi/:ticker',
+    handleAPIRequest('summary-info', (params) => `${apiUrl}rsi?ticker=${params.ticker}`)
+);
 
 
 // Start server

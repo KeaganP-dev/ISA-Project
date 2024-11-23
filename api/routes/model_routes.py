@@ -40,3 +40,16 @@ def summary_info():
         return jsonify(summary)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@stock_bp.route('/rsi', methods=['GET'])
+def summary_info():
+    ticker = request.args.get('ticker')
+
+    if not ticker:
+        return jsonify({'error': 'Ticker symbol is required'}), 400
+
+    try:
+        summary = analyzer.static_calculate_rsi(ticker)
+        return jsonify(summary)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
