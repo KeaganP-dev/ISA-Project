@@ -13,6 +13,7 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
+const apiUrl = "https://isa-project-cxqx.onrender.com/";
 
 app.use(cors({
     origin: 'https://isa-project-client.netlify.app',
@@ -35,71 +36,6 @@ const pool = mariadb.createPool({
 });
 
 app.options('*', cors());
-
-app.get('/predict/:symbol', async (req, res) => {
-    const { symbol } = req.params;
-    const token = req.cookies.token;  // Get the token from cookies
-
-    // Check if token is present
-    if (!token) {
-        return res.status(401).send('Unauthorized: No token provided');
-    }
-
-    try {
-        // Verify the token
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const userEmail = decoded.email;
-        const REQUEST_LIMIT = 20;
-
-        let conn;
-        let user;
-        let outOfRequests = false;
-        try {
-            conn = await pool.getConnection();
-
-            const [userData] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
-            if (!userData) return res.status(404).send('User not found');
-
-            user = userData;
-            
-            // Check if the user has exceeded the request limit
-            outOfRequests = user.requests >= REQUEST_LIMIT;
-
-            // Update the requests count in the database
-            const updateQuery = `
-                UPDATE users
-                SET requests = requests + 1
-                WHERE email = ?;
-                
-            `;
-            await conn.query(updateQuery, [userEmail]);
-
-            console.log(`Requests count updated for user: ${userEmail}`);
-        } catch (dbError) {
-            console.error('Database error:', dbError);
-            return res.status(500).send('Database error');
-        } finally {
-            if (conn) conn.end();
-        }
-
-        // Fetch data from the external API
-        const response = await axios.get(`https://ankitahlwat1.pythonanywhere.com/predict?symbol=${symbol}`);
-
-        if (outOfRequests) {
-            response.data.warning = 'You have exceeded the request limit.';
-        }
-
-        res.status(200).json(response.data);
-    } catch (error) {
-        console.error('Error:', error.message);
-        if (error instanceof jwt.JsonWebTokenError) {
-            return res.status(403).send('Invalid token');
-        }
-        res.status(500).send('Failed to fetch data from external API');
-    }
-});
-
-
 // Register endpoint
 app.post('/register', async (req, res) => {
     const { firstName, email, password } = req.body;
@@ -146,7 +82,7 @@ app.post('/login', async (req, res) => {
             sameSite: 'None',  // Required for cross-site cookies
             secure: true       // Required for cookies over HTTPS
         });
-        
+
         res.send('Login successful');
     } catch (err) {
         res.status(500).send('Server error');
@@ -195,6 +131,218 @@ app.get('/users', async (req, res) => {
         res.status(403).send('Invalid token');
     }
 });
+
+// TODO CAN YOU CHECK THESE WORK 
+// Existing imports and setup code remain the same
+
+// Add a PUT endpoint for updating user details
+app.put('/users/:email', async (req, res) => {
+    const { email } = req.params;
+    const { firstName, requests } = req.body;
+    const token = req.cookies.token; // Get the token from cookies
+
+    if (!token) {
+        return res.status(401).send('Unauthorized: No token provided');
+    }
+
+    try {
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        // Check if the user has admin privileges
+        if (!decoded.isAdmin) {
+            return res.status(403).send('Forbidden: Admins only');
+        }
+
+        if (!email || (!firstName && requests === undefined)) {
+            return res.status(400).send('Invalid request. Provide email and at least one field to update.');
+        }
+
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            const userExists = await conn.query('SELECT * FROM users WHERE email = ?', [email]);
+            if (!userExists.length) {
+                return res.status(404).send('User not found');
+            }
+
+            const updateFields = [];
+            const updateValues = [];
+
+            if (firstName) {
+                updateFields.push('first_name = ?');
+                updateValues.push(firstName);
+            }
+
+            if (requests !== undefined) {
+                updateFields.push('requests = ?');
+                updateValues.push(requests);
+            }
+
+            updateValues.push(email);
+
+            const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE email = ?`;
+            await conn.query(updateQuery, updateValues);
+
+            res.status(200).send('User updated successfully');
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Server error');
+        } finally {
+            if (conn) conn.end();
+        }
+    } catch (err) {
+        console.error(err);
+        if (err instanceof jwt.JsonWebTokenError) {
+            return res.status(403).send('Invalid token');
+        }
+        res.status(500).send('Server error');
+    }
+});
+
+
+// Add a DELETE endpoint for deleting users
+app.delete('/users/:email', async (req, res) => {
+    const { email } = req.params;
+    const token = req.cookies.token; // Get the token from cookies
+
+    if (!token) {
+        return res.status(401).send('Unauthorized: No token provided');
+    }
+
+    try {
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        // Check if the user has admin privileges
+        if (!decoded.isAdmin) {
+            return res.status(403).send('Forbidden: Admins only');
+        }
+
+        if (!email) {
+            return res.status(400).send('Email is required');
+        }
+
+        let conn;
+        try {
+            conn = await pool.getConnection();
+
+            const result = await conn.query('DELETE FROM users WHERE email = ?', [email]);
+            if (result.affectedRows === 0) {
+                return res.status(404).send('User not found');
+            }
+
+            res.status(200).send('User deleted successfully');
+        } catch (err) {
+            console.error(err);
+            res.status(500).send('Server error');
+        } finally {
+            if (conn) conn.end();
+        }
+    } catch (err) {
+        console.error(err);
+        if (err instanceof jwt.JsonWebTokenError) {
+            return res.status(403).send('Invalid token');
+        }
+        res.status(500).send('Server error');
+    }
+});
+
+// Ensure all connections require HTTPS (Part 6 of API Server I think)
+app.use((req, res, next) => {
+    if (!req.secure) {
+        return res.status(400).send('HTTPS is required');
+    }
+    next();
+});
+
+// External API Logic
+const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userEmail = decoded.email;
+
+    let conn;
+    let user;
+    let outOfRequests = false;
+
+    try {
+        conn = await pool.getConnection();
+
+        const [userData] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
+        if (!userData) throw new Error('User not found');
+
+        user = userData;
+
+        // Check if the user has exceeded the request limit
+        outOfRequests = user.requests >= REQUEST_LIMIT;
+
+        // Update the requests count in the database
+        const updateQuery = `
+            UPDATE users
+            SET requests = requests + 1
+            WHERE email = ?;
+        `;
+        await conn.query(updateQuery, [userEmail]);
+
+        console.log(`Requests count updated for user: ${userEmail}`);
+    } finally {
+        if (conn) conn.end();
+    }
+
+    return { outOfRequests, userEmail };
+};
+
+const fetchExternalAPI = async (url) => {
+    try {
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        console.error('External API error:', error.message);
+        throw new Error('Failed to fetch data from external API');
+    }
+};
+
+const handleAPIRequest = (endpoint, apiUrlGenerator) => {
+    return async (req, res) => {
+        const { params } = req;
+        const token = req.cookies.token; // Get the token from cookies
+
+        if (!token) {
+            return res.status(401).send('Unauthorized: No token provided');
+        }
+
+        try {
+            const REQUEST_LIMIT = 20;
+            const { outOfRequests, userEmail } = await verifyTokenAndFetchUser(token, REQUEST_LIMIT);
+
+            const apiUrl = apiUrlGenerator(params);
+            const data = await fetchExternalAPI(apiUrl);
+
+            if (outOfRequests) {
+                data.warning = 'You have exceeded the request limit.';
+            }
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error:', error.message);
+            if (error instanceof jwt.JsonWebTokenError) {
+                return res.status(403).send('Invalid token');
+            }
+            res.status(500).send(error.message);
+        }
+    };
+};
+
+app.get(
+    '/summary-info/:ticker',
+    handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
+);
+
+app.get(
+    '/predict/:symbol',
+    handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
+);
 
 
 // Start server
