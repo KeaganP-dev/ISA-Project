@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!response.ok) {
             // If the user is not authenticated, redirect to the login page
             console.warn('User not authenticated. Redirecting to login...');
+            console.log('not authenticated, redirecting')
             window.location.href = '/';
         } 
 
