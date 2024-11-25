@@ -329,7 +329,7 @@ app.get('/api-consumption', async (req, res) => {
                 SELECT COUNT(r.id) 
                 FROM users u 
                 LEFT JOIN requests r ON u.id = r.user_id
-                WHERE id = ?`, [userId]);
+                WHERE u.id = ?`, [userId]);
 
             if (!user) {
                 return res.status(404).send('User not found');
