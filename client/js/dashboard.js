@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error('Error checking authentication:', error);
         // Redirect to login page in case of an error
-        window.location.href = '/login.html';
+        window.location.href = '/';
     }
 });
 
