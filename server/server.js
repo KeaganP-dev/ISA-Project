@@ -335,7 +335,7 @@ app.get('/api-consumption', async (req, res) => {
                 return res.status(404).send('User not found');
             }
 
-            res.status(200).json({ email: userEmail, totalRequests: user.requests });
+            res.status(200).json({ totalRequests: user.requests });
         } catch (err) {
             console.error('Database error:', err);
             res.status(500).send('Internal server error');

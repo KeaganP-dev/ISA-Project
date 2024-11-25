@@ -134,6 +134,8 @@ async function fetchApiConsumption() {
 
         if (response.ok) {
             const data = await response.json();
+            console.log(data.totalRequests);
+            console.log(data);
             apiConsumptionElement.innerText = `Total API Requests Used: ${data.totalRequests}`;
         } else {
             const errorText = await response.text();
