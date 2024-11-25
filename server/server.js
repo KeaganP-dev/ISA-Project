@@ -322,7 +322,7 @@ app.get('/api-consumption', async (req, res) => {
 
         let conn;
         try {
-            requests = getUserRequests(userId);
+            requests = await getUserRequests(userId);
 
             res.status(200).json({ totalRequests: requests });
         } catch (err) {
@@ -367,7 +367,7 @@ async function getUserRequests(userId) {
         SELECT COUNT(r.id) 
         FROM users u 
         LEFT JOIN requests r ON u.id = r.user_id
-        WHERE u.id = ?`, [userId]);
+        WHERE u.id = ?;`, [userId]);
 
     return Number(requests[0]['COUNT(r.id)']);
 }
@@ -410,7 +410,7 @@ const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {
 
     let outOfRequests = false;
 
-    requests = getUserRequests(userId);
+    requests = await getUserRequests(userId);
 
     // Check if the user has exceeded the request limit
     outOfRequests = requests >= REQUEST_LIMIT;
