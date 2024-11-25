@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Request Summaries</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .table-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Request Summaries</h1>
+
+    <div class="table-container">
+        <h2>Requests Summary by Endpoint</h2>
+        <table id="requests-summary-table">
+            <thead>
+                <tr>
+                    <th>Method</th>
+                    <th>Endpoint</th>
+                    <th>Total Requests</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="table-container">
+        <h2>User Requests Summary</h2>
+        <table id="user-requests-summary-table">
+            <thead>
+                <tr>
+                    <th>User Name</th>
+                    <th>Email</th>
+                    <th>Total Requests</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Fetch data from the Requests Summary endpoint
+        async function fetchRequestsSummary() {
+            try {
+                const response = await fetch('/api/requests-summary');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch requests summary: ${response.statusText}`);
+                }
+                const data = await response.json();
+                populateTable('requests-summary-table', data);
+            } catch (error) {
+                console.error('Error fetching requests summary:', error);
+            }
+        }
+
+        // Fetch data from the User Requests Summary endpoint
+        async function fetchUserRequestsSummary() {
+            try {
+                const response = await fetch('/api/user-requests-summary');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch user requests summary: ${response.statusText}`);
+                }
+                const data = await response.json();
+                populateTable('user-requests-summary-table', data);
+            } catch (error) {
+                console.error('Error fetching user requests summary:', error);
+            }
+        }
+
+        // Populate a table with data
+        function populateTable(tableId, data) {
+            const tableBody = document.getElementById(tableId).querySelector('tbody');
+            tableBody.innerHTML = ''; // Clear any existing rows
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(cellData => {
+                    const td = document.createElement('td');
+                    td.textContent = cellData;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Load the tables when the page is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRequestsSummary();
+            fetchUserRequestsSummary();
+        });
+    </script>
+</body>
+</html>

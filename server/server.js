@@ -9,7 +9,6 @@ const cookieParser = require('cookie-parser');
 const mariadb = require('mariadb');
 const axios = require('axios');
 
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -36,7 +35,47 @@ const pool = mariadb.createPool({
 });
 
 app.options('*', cors());
-// Register endpoint
+
+// Middleware to log requests in the database
+app.use(async (req, res, next) => {
+    if (!req.userId || !req.originalUrl) return next(); // Skip if no userId or URL available
+
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        // Get or create endpoint ID
+        let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [req.originalUrl, req.method]);
+        if (!endpoint) {
+            const result = await conn.query('INSERT INTO endpoints (endpoint, method) VALUES (?, ?)', [req.originalUrl, req.method]);
+            endpoint = { id: result.insertId };
+        }
+
+        // Insert request record
+        await conn.query('INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())', [req.userId, endpoint.id]);
+    } catch (err) {
+        console.error('Error logging request:', err.message);
+    } finally {
+        if (conn) conn.end();
+    }
+    next();
+});
+
+// Middleware to extract user ID from token
+app.use(async (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) return next(); // Skip if no token
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.userId = decoded.id; // Assuming the token includes `id`
+    } catch (err) {
+        console.error('Token error:', err.message);
+    }
+    next();
+});
+
+// Example of how to modify an existing endpoint (e.g., /register) to log requests
 app.post('/register', async (req, res) => {
     const { firstName, email, password } = req.body;
     if (!firstName || !email || !password) return res.status(400).send('All fields are required');
@@ -49,7 +88,10 @@ app.post('/register', async (req, res) => {
         if (existingUser) return res.status(400).send('User already exists');
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        await conn.query('INSERT INTO users (first_name, email, password) VALUES (?, ?, ?)', [firstName, email, hashedPassword]);
+        const result = await conn.query('INSERT INTO users (first_name, email, password) VALUES (?, ?, ?)', [firstName, email, hashedPassword]);
+
+        // Log the request with the newly created user ID
+        req.userId = result.insertId;
 
         res.status(201).send('User registered successfully');
     } catch (err) {
@@ -59,6 +101,7 @@ app.post('/register', async (req, res) => {
         if (conn) conn.end();
     }
 });
+
 // Login endpoint
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -249,39 +292,83 @@ app.delete('/users/:email', async (req, res) => {
     }
 });
 
-app.get('/api-consumption', async (req, res) => {
-    const token = req.cookies.token;
+// app.get('/api-consumption', async (req, res) => {
+//     const token = req.cookies.token;
 
-    if (!token) {
-        return res.status(401).send('Unauthorized: No token provided');
-    }
+//     if (!token) {
+//         return res.status(401).send('Unauthorized: No token provided');
+//     }
 
+//     try {
+//         // Decode the token to get the user's email
+//         const decoded = jwt.verify(token, JWT_SECRET);
+//         const userEmail = decoded.email;
+
+//         let conn;
+//         try {
+//             conn = await pool.getConnection();
+
+//             // Fetch the total API consumption for the user
+//             const [user] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
+
+//             if (!user) {
+//                 return res.status(404).send('User not found');
+//             }
+
+//             res.status(200).json({ email: userEmail, totalRequests: user.requests });
+//         } catch (err) {
+//             console.error('Database error:', err);
+//             res.status(500).send('Internal server error');
+//         } finally {
+//             if (conn) conn.end();
+//         }
+//     } catch (err) {
+//         console.error('Token error:', err);
+//         res.status(403).send('Invalid token');
+//     }
+// });
+
+// Endpoint: Total requests per endpoint
+app.get('/endpoint-requests', async (req, res) => {
+    let conn;
     try {
-        // Decode the token to get the user's email
-        const decoded = jwt.verify(token, JWT_SECRET);
-        const userEmail = decoded.email;
+        conn = await pool.getConnection();
 
-        let conn;
-        try {
-            conn = await pool.getConnection();
+        const results = await conn.query(`
+            SELECT e.method, e.endpoint, COUNT(r.id) AS total_requests
+            FROM endpoints e
+            LEFT JOIN requests r ON e.id = r.endpoint_id
+            GROUP BY e.id;
+        `);
 
-            // Fetch the total API consumption for the user
-            const [user] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
-
-            if (!user) {
-                return res.status(404).send('User not found');
-            }
-
-            res.status(200).json({ email: userEmail, totalRequests: user.requests });
-        } catch (err) {
-            console.error('Database error:', err);
-            res.status(500).send('Internal server error');
-        } finally {
-            if (conn) conn.end();
-        }
+        res.json(results);
     } catch (err) {
-        console.error('Token error:', err);
-        res.status(403).send('Invalid token');
+        console.error('Database error:', err.message);
+        res.status(500).send('Server error');
+    } finally {
+        if (conn) conn.end();
+    }
+});
+
+// Endpoint: Total requests per user
+app.get('/user-requests', async (req, res) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const results = await conn.query(`
+            SELECT u.first_name AS user_name, u.email, COUNT(r.id) AS total_requests
+            FROM users u
+            LEFT JOIN requests r ON u.id = r.user_id
+            GROUP BY u.id;
+        `);
+
+        res.json(results);
+    } catch (err) {
+        console.error('Database error:', err.message);
+        res.status(500).send('Server error');
+    } finally {
+        if (conn) conn.end();
     }
 });
 
