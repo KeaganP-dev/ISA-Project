@@ -62,7 +62,7 @@ app.use(async (req, res, next) => {
         }
 
         // Insert request record
-        await conn.query('INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())', [req.userId, endpoint.id]);
+        await conn.query('INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())', [user, endpoint.id]);
     } catch (err) {
         console.error('Error logging request:', err.message);
     } finally {
