@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // If the user is not authenticated, redirect to the login page
             console.warn('User not authenticated. Redirecting to login...');
             window.location.href = '/login.html';
-        } else if (response.body === "Authenticated; Admin") {
+        } else if (await response.json().role === "admin") {
             console.log("admin")
             const adminTab = document.getElementById('adminTab');
             adminTab.style.display = 'block'; // Make the Admin button visible

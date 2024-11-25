@@ -416,8 +416,10 @@ app.get('/auth-check', (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         if (decoded.isAdmin) {
-            return res.status(200).send('Authenticated; Admin')
+            res.json({ role: 'admin'});
+            return res.status(200).send('Authenticated');
         } else if (decoded) {
+            res.json({ role: 'user'});
             return res.status(200).send('Authenticated');
         } else {
             return res.status(401).send('Not authenticated');
