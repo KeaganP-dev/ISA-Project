@@ -322,20 +322,9 @@ app.get('/api-consumption', async (req, res) => {
 
         let conn;
         try {
-            conn = await pool.getConnection();
+            requests = getUserRequests(userId);
 
-            // Fetch the total API consumption for the user
-            const requests = await conn.query(`
-                SELECT COUNT(r.id) 
-                FROM users u 
-                LEFT JOIN requests r ON u.id = r.user_id
-                WHERE u.id = ?`, [userId]);
-
-            if (!user) {
-                return res.status(404).send('User not found');
-            }
-
-            res.status(200).json({ totalRequests: Number(requests[0]['COUNT(r.id)']) });
+            res.status(200).json({ totalRequests: requests });
         } catch (err) {
             console.error('Database error:', err);
             res.status(500).send('Internal server error');
@@ -369,6 +358,19 @@ app.get('/endpoint-requests', async (req, res) => {
         if (conn) conn.end();
     }
 });
+
+function getUserRequests(userId) {
+    conn = pool.getConnection();
+
+    // Fetch the total API consumption for the user
+    const requests = conn.query(`
+        SELECT COUNT(r.id) 
+        FROM users u 
+        LEFT JOIN requests r ON u.id = r.user_id
+        WHERE u.id = ?`, [userId]);
+
+    return Number(requests[0]['COUNT(r.id)']);
+}
 
 // Endpoint: Total requests per user
 app.get('/user-requests', async (req, res) => {
@@ -404,37 +406,17 @@ app.get('/user-requests', async (req, res) => {
 // External API Logic
 const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const userEmail = decoded.email;
+    const userId = decoded.userId;
 
-    let conn;
-    let user;
     let outOfRequests = false;
 
-    try {
-        conn = await pool.getConnection();
+    requests = getUserRequests(userId);
 
-        const [userData] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
-        if (!userData) throw new Error('User not found');
+    // Check if the user has exceeded the request limit
+    outOfRequests = requests >= REQUEST_LIMIT;
 
-        user = userData;
 
-        // Check if the user has exceeded the request limit
-        outOfRequests = user.requests >= REQUEST_LIMIT;
-
-        // Update the requests count in the database
-        const updateQuery = `
-            UPDATE users
-            SET requests = requests + 1
-            WHERE email = ?;
-        `;
-        await conn.query(updateQuery, [userEmail]);
-
-        console.log(`Requests count updated for user: ${userEmail}`);
-    } finally {
-        if (conn) conn.end();
-    }
-
-    return { outOfRequests, userEmail };
+    return { outOfRequests, userId };
 };
 
 const fetchExternalAPI = async (url) => {
@@ -458,7 +440,7 @@ const handleAPIRequest = (endpoint, apiUrlGenerator) => {
 
         try {
             const REQUEST_LIMIT = 20;
-            const { outOfRequests, userEmail } = await verifyTokenAndFetchUser(token, REQUEST_LIMIT);
+            const { outOfRequests, userId } = await verifyTokenAndFetchUser(token, REQUEST_LIMIT);
 
             const apiUrl = apiUrlGenerator(params);
             const data = await fetchExternalAPI(apiUrl);
