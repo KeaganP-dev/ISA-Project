@@ -350,7 +350,16 @@ app.get('/endpoint-requests', async (req, res) => {
             GROUP BY e.id;
         `);
 
-        res.json(results);
+        const processedResults = results.map(row => {
+            return Object.fromEntries(
+                Object.entries(row).map(([key, value]) => [
+                    key,
+                    typeof value === 'bigint' ? Number(value) : value
+                ])
+            );
+        });
+
+        res.json(processedResults);
     } catch (err) {
         console.error('Database error:', err.message);
         res.status(500).send('Server error');
@@ -385,7 +394,16 @@ app.get('/user-requests', async (req, res) => {
             GROUP BY u.id;
         `);
 
-        res.json(results);
+        const processedResults = results.map(row => {
+            return Object.fromEntries(
+                Object.entries(row).map(([key, value]) => [
+                    key,
+                    typeof value === 'bigint' ? Number(value) : value
+                ])
+            );
+        });
+
+        res.json(processedResults);
     } catch (err) {
         console.error('Database error:', err.message);
         res.status(500).send('Server error');
