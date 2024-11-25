@@ -11,9 +11,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('User not authenticated. Redirecting to login...');
             window.location.href = '/login.html';
         } else if (response.body === "Authenticated; Admin") {
+            console.log("admin")
             const adminTab = document.getElementById('adminTab');
             adminTab.style.display = 'block'; // Make the Admin button visible
         }
+        console.log(response.body)
     } catch (error) {
         console.error('Error checking authentication:', error);
         // Redirect to login page in case of an error
