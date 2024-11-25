@@ -335,7 +335,7 @@ app.get('/api-consumption', async (req, res) => {
                 return res.status(404).send('User not found');
             }
 
-            res.status(200).json({ totalRequests: requests[0]['COUNT(r.id)'] });
+            res.status(200).json({ totalRequests: Number(requests[0]['COUNT(r.id)']) });
         } catch (err) {
             console.error('Database error:', err);
             res.status(500).send('Internal server error');

@@ -44,7 +44,7 @@ async function showUserDetails() {
 
 
 async function getTickerSummary() {
-    const ticker = document.getElementById('tickerInput').value;
+    const ticker = document.getElementById('userInput').value;
     if (!ticker) {
         alert('Please enter a ticker symbol.');
         return;
@@ -70,7 +70,7 @@ async function getTickerSummary() {
     }
 }
 async function getRSIData() {
-    const ticker = document.getElementById('tickerInput').value;
+    const ticker = document.getElementById('userInput').value;
     if (!ticker) {
         alert('Please enter a ticker symbol.');
         return;
@@ -97,7 +97,7 @@ async function getRSIData() {
 }
 
 async function getPrediction() {
-    const ticker = document.getElementById('tickerInput').value;
+    const ticker = document.getElementById('userInput').value;
     if (!ticker) {
         alert('Please enter a ticker symbol.');
         return;
