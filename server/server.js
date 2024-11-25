@@ -301,7 +301,7 @@ app.get('/api-consumption', async (req, res) => {
 
 // Endpoint: Total requests per endpoint (Admin only)
 app.get('/endpoint-requests', async (req, res) => {
-    const token = req.headers['authorization'];
+    const token = req.cookies.token; 
 
     try {
         // Verify the token
@@ -361,7 +361,7 @@ async function getUserRequests(userId) {
 
 // Endpoint: Total requests per user (Admin only)
 app.get('/user-requests', async (req, res) => {
-    const token = req.headers['authorization'];
+    const token = req.cookies.token;
 
     try {
         // Verify the token
