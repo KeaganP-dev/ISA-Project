@@ -1,5 +1,4 @@
 // Populate user-facing text on the dashboard page
-document.getElementById("seeUserDetails").innerText = userMessages.seeUserDetailsButton;
 document.getElementById("adminTab").innerText = userMessages.adminInfoTab;
 document.getElementById("dashboardWelcome").innerText = userMessages.dashboardWelcome;
 document.getElementById("dashboardText").innerText = userMessages.dashboardText;
@@ -9,38 +8,6 @@ document.getElementById("adminDashboardTitle").innerText = userMessages.adminDas
 document.getElementById("adminName").innerText = userMessages.adminName;
 document.getElementById("adminEmail").innerText = userMessages.adminEmail;
 document.getElementById("adminApiCalls").innerText = userMessages.adminApiCalls;
-
-async function showUserDetails() {
-    try {
-        // Fetch user details
-        const response = await fetch('https://keaganpurtell.com/users', {
-            method: 'GET',
-            credentials: 'include',
-        });
-
-        if (response.ok) {
-            // Parse the JSON response
-            const users = await response.json();
-            const userDetailsDiv = document.getElementById('userDetails');
-            userDetailsDiv.innerHTML = ''; // Clear previous details
-
-            // Populate user details
-            users.forEach(user => {
-                const userDetail = `<p>Name: ${user.first_name}, Email: ${user.email}, Requests: ${user.requests}</p>`;
-                userDetailsDiv.innerHTML += userDetail;
-            });
-        } else {
-            // Handle errors from the server response
-            const errorText = await response.text();
-            console.error('Error fetching user details:', errorText);
-            alert('Error fetching user details. Please try again.');
-        }
-    } catch (error) {
-        // Handle fetch or network errors
-        console.error('Error:', error);
-        alert('Error fetching user details. Please check your connection.');
-    }
-}
 
 
 async function getTickerSummary() {

@@ -151,46 +151,6 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/users', async (req, res) => {
-    const token = req.cookies.token;
-
-    // Check if token is present
-    if (!token) {
-        return res.status(401).send('Unauthorized');
-    }
-
-    try {
-        // Verify the token
-        const decoded = jwt.verify(token, JWT_SECRET);
-
-        // Check if the user has admin privileges
-        if (!decoded.isAdmin) {
-            return res.status(403).send('Forbidden: Admins only');
-        }
-
-        // Database connection
-        let conn;
-        try {
-            conn = await pool.getConnection();
-
-            // Query all users' data (first_name, email, requests)
-            const query = 'SELECT first_name, email, requests FROM users';
-            const results = await conn.query(query);
-
-            // Send results as JSON
-            res.json(results);
-        } catch (dbError) {
-            console.error(dbError);
-            res.status(500).send('Database error');
-        } finally {
-            if (conn) conn.end();
-        }
-    } catch (jwtError) {
-        console.error(jwtError);
-        res.status(403).send('Invalid token');
-    }
-});
-
 // TODO CAN YOU CHECK THESE WORK 
 // Existing imports and setup code remain the same
 
@@ -314,11 +274,13 @@ app.get('/api-consumption', async (req, res) => {
     if (!token) {
         return res.status(401).send('Unauthorized: No token provided');
     }
+    
 
     try {
         // Decode the token to get the user's email
         const decoded = jwt.verify(token, JWT_SECRET);
         const userId = decoded.userId;
+        
 
         let conn;
         try {
@@ -337,36 +299,52 @@ app.get('/api-consumption', async (req, res) => {
     }
 });
 
-// Endpoint: Total requests per endpoint
+// Endpoint: Total requests per endpoint (Admin only)
 app.get('/endpoint-requests', async (req, res) => {
-    let conn;
+    const token = req.headers['authorization'];
+
     try {
-        conn = await pool.getConnection();
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
 
-        const results = await conn.query(`
-            SELECT e.method, e.endpoint, COUNT(r.id) AS total_requests
-            FROM endpoints e
-            LEFT JOIN requests r ON e.id = r.endpoint_id
-            GROUP BY e.id;
-        `);
+        // Check if the user has admin privileges
+        if (!decoded.isAdmin) {
+            return res.status(403).send('Forbidden: Admins only');
+        }
 
-        const processedResults = results.map(row => {
-            return Object.fromEntries(
-                Object.entries(row).map(([key, value]) => [
-                    key,
-                    typeof value === 'bigint' ? Number(value) : value
-                ])
-            );
-        });
+        let conn;
+        try {
+            conn = await pool.getConnection();
 
-        res.json(processedResults);
+            const results = await conn.query(`
+                SELECT e.method, e.endpoint, COUNT(r.id) AS total_requests
+                FROM endpoints e
+                LEFT JOIN requests r ON e.id = r.endpoint_id
+                GROUP BY e.id;
+            `);
+
+            const processedResults = results.map(row => {
+                return Object.fromEntries(
+                    Object.entries(row).map(([key, value]) => [
+                        key,
+                        typeof value === 'bigint' ? Number(value) : value
+                    ])
+                );
+            });
+
+            res.json(processedResults);
+        } catch (err) {
+            console.error('Database error:', err.message);
+            res.status(500).send('Server error');
+        } finally {
+            if (conn) conn.end();
+        }
     } catch (err) {
-        console.error('Database error:', err.message);
-        res.status(500).send('Server error');
-    } finally {
-        if (conn) conn.end();
+        console.error('Authentication error:', err.message);
+        res.status(401).send('Unauthorized: Invalid token');
     }
 });
+
 
 async function getUserRequests(userId) {
     conn = await pool.getConnection();
@@ -381,45 +359,52 @@ async function getUserRequests(userId) {
     return Number(requests[0]['COUNT(r.id)']);
 }
 
-// Endpoint: Total requests per user
+// Endpoint: Total requests per user (Admin only)
 app.get('/user-requests', async (req, res) => {
-    let conn;
+    const token = req.headers['authorization'];
+
     try {
-        conn = await pool.getConnection();
+        // Verify the token
+        const decoded = jwt.verify(token, JWT_SECRET);
 
-        const results = await conn.query(`
-            SELECT u.first_name AS user_name, u.email, COUNT(r.id) AS total_requests
-            FROM users u
-            LEFT JOIN requests r ON u.id = r.user_id
-            GROUP BY u.id;
-        `);
+        // Check if the user has admin privileges
+        if (!decoded.isAdmin) {
+            return res.status(403).send('Forbidden: Admins only');
+        }
 
-        const processedResults = results.map(row => {
-            return Object.fromEntries(
-                Object.entries(row).map(([key, value]) => [
-                    key,
-                    typeof value === 'bigint' ? Number(value) : value
-                ])
-            );
-        });
+        let conn;
+        try {
+            conn = await pool.getConnection();
 
-        res.json(processedResults);
+            const results = await conn.query(`
+                SELECT u.first_name AS user_name, u.email, COUNT(r.id) AS total_requests
+                FROM users u
+                LEFT JOIN requests r ON u.id = r.user_id
+                GROUP BY u.id;
+            `);
+
+            const processedResults = results.map(row => {
+                return Object.fromEntries(
+                    Object.entries(row).map(([key, value]) => [
+                        key,
+                        typeof value === 'bigint' ? Number(value) : value
+                    ])
+                );
+            });
+
+            res.json(processedResults);
+        } catch (err) {
+            console.error('Database error:', err.message);
+            res.status(500).send('Server error');
+        } finally {
+            if (conn) conn.end();
+        }
     } catch (err) {
-        console.error('Database error:', err.message);
-        res.status(500).send('Server error');
-    } finally {
-        if (conn) conn.end();
+        console.error('Authentication error:', err.message);
+        res.status(401).send('Unauthorized: Invalid token');
     }
 });
 
-
-// Ensure all connections require HTTPS (Part 6 of API Server I think)
-// app.use((req, res, next) => {
-//     if (!req.secure) {
-//         return res.status(400).send('HTTPS is required');
-//     }
-//     next();
-// });
 
 // External API Logic
 const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {
