@@ -47,10 +47,11 @@ app.use(async (req, res, next) => {
     console.log(user);
 
     console.log(req.method);
-    if (!req.userId || !req.originalUrl) return next(); // Skip if no userId or URL available
+    if (!user || !req.originalUrl) return next(); // Skip if no userId or URL available
 
     let conn;
     try {
+        console.log('inside try block');
         conn = await pool.getConnection();
 
         // Get or create endpoint ID
