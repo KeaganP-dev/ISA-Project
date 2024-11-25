@@ -74,7 +74,7 @@ app.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).send('Invalid email or password');
 
-        const isAdmin = user.email === 'admin@admin.com';
+        const isAdmin = Boolean(user.admin);
 
         const token = jwt.sign({ email: user.email, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         res.cookie('token', token, {
