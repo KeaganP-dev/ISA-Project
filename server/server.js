@@ -325,7 +325,7 @@ app.get('/api-consumption', async (req, res) => {
             conn = await pool.getConnection();
 
             // Fetch the total API consumption for the user
-            const [user] = await conn.query(`
+            const requests = await conn.query(`
                 SELECT COUNT(r.id) 
                 FROM users u 
                 LEFT JOIN requests r ON u.id = r.user_id
@@ -335,7 +335,7 @@ app.get('/api-consumption', async (req, res) => {
                 return res.status(404).send('User not found');
             }
 
-            res.status(200).json({ totalRequests: user.requests });
+            res.status(200).json({ totalRequests: requests[0]['COUNT(r.id)'] });
         } catch (err) {
             console.error('Database error:', err);
             res.status(500).send('Internal server error');
