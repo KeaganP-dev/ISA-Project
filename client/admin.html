@@ -70,7 +70,9 @@
         // Fetch data from the Requests Summary endpoint
         async function fetchRequestsSummary() {
             try {
-                const response = await fetch('https://keaganpurtell.com/endpoint-requests');
+                const response = await fetch('https://keaganpurtell.com/endpoint-requests', {
+                    credentials: 'include'
+                });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch requests summary: ${response.statusText}`);
                 }
@@ -84,7 +86,9 @@
         // Fetch data from the User Requests Summary endpoint
         async function fetchUserRequestsSummary() {
             try {
-                const response = await fetch('https://keaganpurtell.com/user-requests');
+                const response = await fetch('https://keaganpurtell.com/user-requests', {
+                    credentials: 'include'
+                });
                 if (!response.ok) {
                     throw new Error(`Failed to fetch user requests summary: ${response.statusText}`);
                 }
