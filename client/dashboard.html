@@ -9,7 +9,7 @@
 </head>
 
 <body>
-    <button id="seeUserDetails"></button>
+    <button id="seeUserDetails" onclick="showUserDetails()" aria-label="See User Details"></button>
     <div id="userDetails"></div>
 
     <div class="navbar">
@@ -23,7 +23,7 @@
         <button id="fetchApiConsumptionButton" onclick="fetchApiConsumption()" aria-label="Fetch API Usage">Check API
             Usage</button>
         <p id="apiConsumption"></p>
-        <input type="text" id="tickerInput" placeholder="Enter ticker symbol">
+        <input type="text" id="userInput" placeholder="Enter ticker symbol">
         <button id="summaryButton" onclick="getTickerSummary()" aria-label="Get Ticker Summary">Get Ticker
             Summary</button>
         <button id="rsiButton" onclick="getRSIData()" aria-label="Get RSI Data">Get RSI Data</button>
