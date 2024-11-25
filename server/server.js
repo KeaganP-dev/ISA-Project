@@ -42,8 +42,14 @@ app.use(async (req, res, next) => {
     console.log(req.originalUrl);
 
     const token = req.cookies.token;
-    const decoded = jwt.verify(token, JWT_SECRET);
-    user = decoded.userId;
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        user = decoded.userId;
+    }
+    catch (jwtError) {
+        user = null;
+    }
+
     console.log(user);
 
     console.log(req.method);
@@ -71,19 +77,19 @@ app.use(async (req, res, next) => {
     next();
 });
 
-// Middleware to extract user ID from token
-app.use(async (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return next(); // Skip if no token
-
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.userId = decoded.id; // Assuming the token includes `id`
-    } catch (err) {
-        console.error('Token error:', err.message);
-    }
-    next();
-});
+// // Middleware to extract user ID from token
+// app.use(async (req, res, next) => {
+//     const token = req.cookies.token;
+//     if (!token) return next(); // Skip if no token
+// 
+//     try {
+//         const decoded = jwt.verify(token, JWT_SECRET);
+//         req.userId = decoded.id; // Assuming the token includes `id`
+//     } catch (err) {
+//         console.error('Token error:', err.message);
+//     }
+//     next();
+// });
 
 // Example of how to modify an existing endpoint (e.g., /register) to log requests
 app.post('/register', async (req, res) => {
