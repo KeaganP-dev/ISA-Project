@@ -40,7 +40,11 @@ app.options('*', cors());
 app.use(async (req, res, next) => {
     console.log("Request received");
     console.log(req.originalUrl);
-    console.log(req.userId);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    user = decoded.userId;
+    console.log(user);
+
     console.log(req.method);
     if (!req.userId || !req.originalUrl) return next(); // Skip if no userId or URL available
 
@@ -123,7 +127,7 @@ app.post('/login', async (req, res) => {
 
         const isAdmin = Boolean(user.admin);
 
-        const token = jwt.sign({ email: user.email, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id, isAdmin }, JWT_SECRET, { expiresIn: '1h' });
         res.cookie('token', token, {
             httpOnly: true,  // More secure to set this to true for a session token
             sameSite: 'None',  // Required for cross-site cookies
