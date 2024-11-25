@@ -405,6 +405,30 @@ app.get('/user-requests', async (req, res) => {
     }
 });
 
+app.get('/auth-check', (req, res) => {
+    const token = req.cookies.token; // Assuming you're using cookies for authentication
+
+    try {
+        if (!token) {
+            return res.status(401).send('Not authenticated');
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+
+        if (decoded.isAdmin) {
+            return res.status(200).send('Authenticated; Admin')
+        } else if (decoded) {
+            return res.status(200).send('Authenticated');
+        } else {
+            return res.status(401).send('Not authenticated');
+        }
+    } catch (err) {
+        console.error('Authentication check error:', err.message);
+        res.status(401).send('Not authenticated');
+    }
+});
+
+
 
 // External API Logic
 const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {

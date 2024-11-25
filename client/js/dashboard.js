@@ -1,3 +1,27 @@
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Check if the user is authenticated
+        const response = await fetch('https://keaganpurtell.com/auth-check', {
+            method: 'GET',
+            credentials: 'include', // Include cookies for session validation
+        });
+
+        if (!response.ok) {
+            // If the user is not authenticated, redirect to the login page
+            console.warn('User not authenticated. Redirecting to login...');
+            window.location.href = '/login.html';
+        } else if (response.body === "Authenticated; Admin") {
+            const adminTab = document.getElementById('adminTab');
+            adminTab.style.display = 'block'; // Make the Admin button visible
+        }
+    } catch (error) {
+        console.error('Error checking authentication:', error);
+        // Redirect to login page in case of an error
+        window.location.href = '/login.html';
+    }
+});
+
+
 // Populate user-facing text on the dashboard page
 document.getElementById("adminTab").innerText = userMessages.adminInfoTab;
 document.getElementById("dashboardWelcome").innerText = userMessages.dashboardWelcome;

@@ -10,9 +10,9 @@
 
 <body>
     <div class="navbar">
-        <div class="tab" onclick="showContent('userInfo')"></div>
-        <div class="tab" id="adminTab" style="display: none;" onclick="showContent('adminInfo')"></div>
-    </div>
+        <div class="tab" onclick="showContent('userInfo')">User</div>
+        <div class="tab" id="adminTab" style="display: none;" onclick="window.location.href='/admin.html'">Admin</div>
+    </div>    
 
     <div id="userInfo" class="content active">
         <h1 id="dashboardWelcome"></h1>
