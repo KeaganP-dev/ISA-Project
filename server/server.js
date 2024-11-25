@@ -308,41 +308,45 @@ app.delete('/users/:email', async (req, res) => {
     }
 });
 
-// app.get('/api-consumption', async (req, res) => {
-//     const token = req.cookies.token;
+app.get('/api-consumption', async (req, res) => {
+    const token = req.cookies.token;
 
-//     if (!token) {
-//         return res.status(401).send('Unauthorized: No token provided');
-//     }
+    if (!token) {
+        return res.status(401).send('Unauthorized: No token provided');
+    }
 
-//     try {
-//         // Decode the token to get the user's email
-//         const decoded = jwt.verify(token, JWT_SECRET);
-//         const userEmail = decoded.email;
+    try {
+        // Decode the token to get the user's email
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const userId = decoded.userId;
 
-//         let conn;
-//         try {
-//             conn = await pool.getConnection();
+        let conn;
+        try {
+            conn = await pool.getConnection();
 
-//             // Fetch the total API consumption for the user
-//             const [user] = await conn.query('SELECT requests FROM users WHERE email = ?', [userEmail]);
+            // Fetch the total API consumption for the user
+            const [user] = await conn.query(`
+                SELECT COUNT(r.id) 
+                FROM users u 
+                LEFT JOIN requests r ON u.id = r.user_id
+                WHERE id = ?`, [userId]);
 
-//             if (!user) {
-//                 return res.status(404).send('User not found');
-//             }
+            if (!user) {
+                return res.status(404).send('User not found');
+            }
 
-//             res.status(200).json({ email: userEmail, totalRequests: user.requests });
-//         } catch (err) {
-//             console.error('Database error:', err);
-//             res.status(500).send('Internal server error');
-//         } finally {
-//             if (conn) conn.end();
-//         }
-//     } catch (err) {
-//         console.error('Token error:', err);
-//         res.status(403).send('Invalid token');
-//     }
-// });
+            res.status(200).json({ email: userEmail, totalRequests: user.requests });
+        } catch (err) {
+            console.error('Database error:', err);
+            res.status(500).send('Internal server error');
+        } finally {
+            if (conn) conn.end();
+        }
+    } catch (err) {
+        console.error('Token error:', err);
+        res.status(403).send('Invalid token');
+    }
+});
 
 // Endpoint: Total requests per endpoint
 app.get('/endpoint-requests', async (req, res) => {
