@@ -41,6 +41,7 @@ app.use(async (req, res, next) => {
     console.log("Request received");
     console.log(req.originalUrl);
 
+    const token = req.cookies.token;
     const decoded = jwt.verify(token, JWT_SECRET);
     user = decoded.userId;
     console.log(user);
