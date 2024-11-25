@@ -52,7 +52,9 @@ class StockAnalyzer:
 
         rs = gain / loss
         history_data['RSI'] = 100 - (100 / (1 + rs))
-        return history_data['RSI']
+
+        rsi_dict = {str(date): value for date, value in history_data['RSI'].dropna().items()}
+        return rsi_dict
 
     def prepare_features(self):
         """Prepare features and target variable for modeling."""
