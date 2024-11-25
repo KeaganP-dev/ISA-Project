@@ -359,11 +359,11 @@ app.get('/endpoint-requests', async (req, res) => {
     }
 });
 
-function getUserRequests(userId) {
-    conn = pool.getConnection();
+async function getUserRequests(userId) {
+    conn = await pool.getConnection();
 
     // Fetch the total API consumption for the user
-    const requests = conn.query(`
+    const requests = await conn.query(`
         SELECT COUNT(r.id) 
         FROM users u 
         LEFT JOIN requests r ON u.id = r.user_id
