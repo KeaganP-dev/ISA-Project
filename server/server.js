@@ -39,6 +39,9 @@ app.options('*', cors());
 // Middleware to log requests in the database
 app.use(async (req, res, next) => {
     console.log("Request received");
+    console.log(req.originalUrl);
+    console.log(req.userId);
+    console.log(req.method);
     if (!req.userId || !req.originalUrl) return next(); // Skip if no userId or URL available
 
     let conn;
