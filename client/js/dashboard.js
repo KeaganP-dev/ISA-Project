@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const adminTab = document.getElementById('adminTab');
             adminTab.style.display = 'block'; // Make the Admin button visible
         }
-        console.log(response.body)
+        console.log(response)
+        console.log('not admin')
     } catch (error) {
         console.error('Error checking authentication:', error);
         // Redirect to login page in case of an error
@@ -29,7 +30,6 @@ document.getElementById("adminTab").innerText = userMessages.adminInfoTab;
 document.getElementById("dashboardWelcome").innerText = userMessages.dashboardWelcome;
 document.getElementById("dashboardText").innerText = userMessages.dashboardText;
 document.getElementById("userInput").placeholder = userMessages.userInputPlaceholder;
-document.getElementById("submitButton").innerText = userMessages.submitButton;
 document.getElementById("adminDashboardTitle").innerText = userMessages.adminDashboardTitle;
 document.getElementById("adminName").innerText = userMessages.adminName;
 document.getElementById("adminEmail").innerText = userMessages.adminEmail;
