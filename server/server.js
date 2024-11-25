@@ -287,12 +287,12 @@ app.get('/api-consumption', async (req, res) => {
 
 
 // Ensure all connections require HTTPS (Part 6 of API Server I think)
-app.use((req, res, next) => {
-    if (!req.secure) {
-        return res.status(400).send('HTTPS is required');
-    }
-    next();
-});
+// app.use((req, res, next) => {
+//     if (!req.secure) {
+//         return res.status(400).send('HTTPS is required');
+//     }
+//     next();
+// });
 
 // External API Logic
 const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {
