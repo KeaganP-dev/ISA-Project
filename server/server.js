@@ -36,6 +36,16 @@ const pool = mariadb.createPool({
 
 app.options('*', cors());
 
+// Middleware to redirect requests without version to /v1
+app.use((req, res, next) => {
+    // Check if the path doesn't start with "/v1" or "/v2"
+    if (!req.path.startsWith('/v1') && !req.path.startsWith('/v2')) {
+        console.log(`Redirecting request to /v1${req.path}`);
+        req.url = `/v1${req.url}`; // Update the URL to include /v1
+    }
+    next(); // Pass control to the next middleware
+});
+
 // Middleware to log requests in the database
 app.use(async (req, res, next) => {
     console.log("Request received");
@@ -79,22 +89,8 @@ app.use(async (req, res, next) => {
     next();
 });
 
-// // Middleware to extract user ID from token
-// app.use(async (req, res, next) => {
-//     const token = req.cookies.token;
-//     if (!token) return next(); // Skip if no token
-// 
-//     try {
-//         const decoded = jwt.verify(token, JWT_SECRET);
-//         req.userId = decoded.id; // Assuming the token includes `id`
-//     } catch (err) {
-//         console.error('Token error:', err.message);
-//     }
-//     next();
-// });
-
-// Example of how to modify an existing endpoint (e.g., /register) to log requests
-app.post('/register', async (req, res) => {
+// register endpoint
+app.post('/v1/register', async (req, res) => {
     const { firstName, email, password } = req.body;
     if (!firstName || !email || !password) return res.status(400).send('All fields are required');
 
@@ -130,7 +126,7 @@ app.post('/register', async (req, res) => {
 });
 
 // Login endpoint
-app.post('/login', async (req, res) => {
+app.post('/v1/login', async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).send('All fields are required');
 
@@ -162,11 +158,8 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// TODO CAN YOU CHECK THESE WORK 
-// Existing imports and setup code remain the same
-
 // Add a PUT endpoint for updating user details
-app.put('/users/:email', async (req, res) => {
+app.put('/v1/users/:email', async (req, res) => {
     const { email } = req.params;
     const { newEmail } = req.body;
     const token = req.cookies.token; // Get the token from cookies
@@ -226,9 +219,8 @@ app.put('/users/:email', async (req, res) => {
     }
 });
 
-
 // Add a DELETE endpoint for deleting users
-app.delete('/users/:email', async (req, res) => {
+app.delete('/v1/users/:email', async (req, res) => {
     const { email } = req.params;
     const token = req.cookies.token; // Get the token from cookies
 
@@ -274,7 +266,8 @@ app.delete('/users/:email', async (req, res) => {
     }
 });
 
-app.get('/api-consumption', async (req, res) => {
+// api-consumption endpoint
+app.get('/v1/api-consumption', async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
@@ -306,7 +299,7 @@ app.get('/api-consumption', async (req, res) => {
 });
 
 // Endpoint: Total requests per endpoint (Admin only)
-app.get('/endpoint-requests', async (req, res) => {
+app.get('/v1/endpoint-requests', async (req, res) => {
     const token = req.cookies.token; 
 
     try {
@@ -351,22 +344,8 @@ app.get('/endpoint-requests', async (req, res) => {
     }
 });
 
-
-async function getUserRequests(userId) {
-    conn = await pool.getConnection();
-
-    // Fetch the total API consumption for the user
-    const requests = await conn.query(`
-        SELECT COUNT(r.id) 
-        FROM users u 
-        LEFT JOIN requests r ON u.id = r.user_id
-        WHERE u.id = ?;`, [userId]);
-
-    return Number(requests[0]['COUNT(r.id)']);
-}
-
 // Endpoint: Total requests per user (Admin only)
-app.get('/user-requests', async (req, res) => {
+app.get('/v1/user-requests', async (req, res) => {
     const token = req.cookies.token;
 
     try {
@@ -411,7 +390,8 @@ app.get('/user-requests', async (req, res) => {
     }
 });
 
-app.get('/auth-check', (req, res) => {
+// Endpoint: Check if the user is authenticated
+app.get('/v1/auth-check', (req, res) => {
     const token = req.cookies.token; // Assuming you're using cookies for authentication
 
     try {
@@ -436,7 +416,32 @@ app.get('/auth-check', (req, res) => {
     }
 });
 
+app.get(
+    '/v1/summary-info/:ticker',
+    handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
+);
 
+app.get(
+    '/v1/predict/:symbol',
+    handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
+);
+app.get(
+    '/v1/rsi/:ticker',
+    handleAPIRequest('summary-info', (params) => `${apiUrl}rsi?ticker=${params.ticker}`)
+);
+
+async function getUserRequests(userId) {
+    conn = await pool.getConnection();
+
+    // Fetch the total API consumption for the user
+    const requests = await conn.query(`
+        SELECT COUNT(r.id) 
+        FROM users u 
+        LEFT JOIN requests r ON u.id = r.user_id
+        WHERE u.id = ?;`, [userId]);
+
+    return Number(requests[0]['COUNT(r.id)']);
+}
 
 // External API Logic
 const verifyTokenAndFetchUser = async (token, REQUEST_LIMIT) => {
@@ -494,20 +499,6 @@ const handleAPIRequest = (endpoint, apiUrlGenerator) => {
         }
     };
 };
-
-app.get(
-    '/summary-info/:ticker',
-    handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
-);
-
-app.get(
-    '/predict/:symbol',
-    handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
-);
-app.get(
-    '/rsi/:ticker',
-    handleAPIRequest('summary-info', (params) => `${apiUrl}rsi?ticker=${params.ticker}`)
-);
 
 
 // Start server
