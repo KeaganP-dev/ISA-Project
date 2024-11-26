@@ -14,30 +14,8 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const apiUrl = "https://isa-project-cxqx.onrender.com/";
 
-const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-
-// Swagger configuration
-const swaggerOptions = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'API Documentation',
-            version: '1.0.0',
-            description: 'API documentation for user authentication and API consumption service',
-        },
-        servers: [
-            {
-                url: 'https://www.keaganpurtell.com/v1',
-                description: 'Development server',
-            },
-        ],
-    },
-    apis: ['./server.js'], // Path to the file containing Swagger annotations
-};
-
-// Generate Swagger documentation
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
+const swaggerDocs = require('./swaggerConfig.js');
 
 app.use(cors({
     origin: 'https://isa-project-client.netlify.app',
