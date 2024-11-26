@@ -7,6 +7,10 @@ document.getElementById("adminDashboardTitle").innerText = userMessages.adminDas
 document.getElementById("adminName").innerText = userMessages.adminName;
 document.getElementById("adminEmail").innerText = userMessages.adminEmail;
 document.getElementById("adminApiCalls").innerText = userMessages.adminApiCalls;
+document.getElementById("fetchApiConsumptionButton").innerText = userMessages.checkAPIUsage;
+document.getElementById("summaryButton").innerText = userMessages.getTickerSummary;
+document.getElementById("rsiButton").innerText = userMessages.getRSIData;
+document.getElementById("predictionButton").innerText = userMessages.getPrediction;
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -22,10 +26,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.warn('User not authenticated. Redirecting to login...');
             console.log('not authenticated, redirecting')
             window.location.href = '/';
-        } 
+        }
 
         const data = await response.json();
-        
+
         if (data.role === "admin") {
             console.log("admin")
             const adminTab = document.getElementById('adminTab');

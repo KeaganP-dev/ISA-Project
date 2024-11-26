@@ -24,6 +24,10 @@ const userMessages = {
     adminApiCalls: "API Calls",
     fetchUserError: "Could not fetch user details. Please try again later.",
     fetchPredictionError: "Failed to fetch prediction. Please try again later.",
+    getTickerSummary: "Get Ticker Summary",
+    checkAPIUsage: "Check API Usage",
+    getRSIData: "Get RSI Data",
+    getPrediction: "Get Prediction",
 
     pageTitle: "API Request Summaries",
     pageHeader: "API Request Summaries",
