@@ -60,6 +60,8 @@ app.use(async (req, res, next) => {
         console.log('inside try block');
         conn = await pool.getConnection();
 
+        url = '/'+req.originalUrl.split('/')[0];
+
         // Get or create endpoint ID
         let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [req.originalUrl, req.method]);
         if (!endpoint) {
@@ -157,7 +159,7 @@ app.post('/login', async (req, res) => {
 // Add a PUT endpoint for updating user details
 app.put('/users/:email', async (req, res) => {
     const { email } = req.params;
-    const { firstName, requests } = req.body;
+    const { newEmail } = req.body;
     const token = req.cookies.token; // Get the token from cookies
 
     if (!token) {
@@ -173,8 +175,8 @@ app.put('/users/:email', async (req, res) => {
             return res.status(403).send('Forbidden: Admins only');
         }
 
-        if (!email || (!firstName && requests === undefined)) {
-            return res.status(400).send('Invalid request. Provide email and at least one field to update.');
+        if (!email || !newEmail) {
+            return res.status(400).send('Invalid request. Provide new email.');
         }
 
         let conn;
@@ -189,9 +191,9 @@ app.put('/users/:email', async (req, res) => {
             const updateFields = [];
             const updateValues = [];
 
-            if (firstName) {
-                updateFields.push('first_name = ?');
-                updateValues.push(firstName);
+            if (newEmail) {
+                updateFields.push('email = ?');
+                updateValues.push(newEmail);
             }
 
             updateValues.push(email);
