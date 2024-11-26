@@ -119,7 +119,15 @@ function populateTable(tableId, data) {
 // Edit user function
 async function editUser(email) {
     const newEmail = prompt(`Enter new email for ${email}:`);
+    // Email validation using a simple regular expression
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     if (newEmail) {
+        if (!emailRegex.test(newEmail)) {
+            alert("Please enter a valid email address.");
+            return; // Stop the function if the email is invalid
+        }
+
         try {
             const response = await fetch(`https://keaganpurtell.com/v1/users/${encodeURIComponent(email)}`, {
                 method: 'PUT',

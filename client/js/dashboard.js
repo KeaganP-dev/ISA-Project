@@ -47,6 +47,12 @@ async function getTickerSummary() {
         return;
     }
 
+    const regex = /^[a-zA-Z0-9]{1,4}$/;
+    if (!regex.test(ticker)) {
+        alert('Invalid ticker symbol. Please enter a valid symbol.');
+        return;
+    }
+
     try {
         const response = await fetch(`https://keaganpurtell.com/v1/summary-info/${ticker}`, {
             method: 'GET',
@@ -70,6 +76,12 @@ async function getRSIData() {
     const ticker = document.getElementById('userInput').value;
     if (!ticker) {
         alert('Please enter a ticker symbol.');
+        return;
+    }
+
+    const regex = /^[a-zA-Z0-9]{1,4}$/;
+    if (!regex.test(ticker)) {
+        alert('Invalid ticker symbol. Please enter a valid symbol.');
         return;
     }
 
@@ -97,6 +109,12 @@ async function getPrediction() {
     const ticker = document.getElementById('userInput').value;
     if (!ticker) {
         alert('Please enter a ticker symbol.');
+        return;
+    }
+
+    const regex = /^[a-zA-Z0-9]{1,4}$/;
+    if (!regex.test(ticker)) {
+        alert('Invalid ticker symbol. Please enter a valid symbol.');
         return;
     }
 
