@@ -148,22 +148,25 @@ function populateTable(tableId, data) {
             tr.appendChild(td);
         });
 
-        // Add actions (Edit and Delete buttons)
-        const actionsTd = document.createElement('td');
+        if (tableId === 'user-requests-summary-table') {
+            // Add a new column for actions (Edit and Delete buttons)
+            const actionsTd = document.createElement('td');
 
-        // Edit button
-        const editButton = document.createElement('button');
-        editButton.textContent = 'Edit';
-        editButton.onclick = () => editUser(row.email); // Use the user's email
-        actionsTd.appendChild(editButton);
+            // Edit button
+            const editButton = document.createElement('button');
+            editButton.textContent = 'Edit';
+            editButton.onclick = () => editUser(row.email); // Use the user's email
+            actionsTd.appendChild(editButton);
 
-        // Delete button
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
-        deleteButton.onclick = () => deleteUser(row.email); // Use the user's email
-        actionsTd.appendChild(deleteButton);
+            // Delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = () => deleteUser(row.email); // Use the user's email
+            actionsTd.appendChild(deleteButton);
 
-        tr.appendChild(actionsTd);
+            tr.appendChild(actionsTd);
+        }
+        
         tableBody.appendChild(tr);
     });
 }
