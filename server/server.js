@@ -220,6 +220,13 @@ app.put('/v1/users/:email', async (req, res) => {
             const updateValues = [];
 
             if (newEmail) {
+                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                if (!emailRegex.test(newEmail)) {
+                    alert("Please enter a valid email address.");
+                    return; // Stop the function if the email is invalid
+                }
+
                 updateFields.push('email = ?');
                 updateValues.push(newEmail);
             }
@@ -478,19 +485,44 @@ const handleAPIRequest = (endpoint, apiUrlGenerator) => {
     };
 };
 
+// Validation middleware
+function validateInput(req, res, next) {
+    const regex = /^[a-zA-Z0-9]{1,4}$/;
+    const { ticker, symbol } = req.params;
+
+    // Check if ticker or symbol is provided and matches the regex
+    if (ticker && !regex.test(ticker)) {
+        return res.status(400).json({ error: 'Invalid ticker format. It should be 1-4 alphanumeric characters.' });
+    }
+    
+    if (symbol && !regex.test(symbol)) {
+        return res.status(400).json({ error: 'Invalid symbol format. It should be 1-4 alphanumeric characters.' });
+    }
+
+    next(); // Proceed if validation passes
+}
+
+// Route for summary-info with ticker validation
 app.get(
     '/v1/summary-info/:ticker',
+    validateInput, // Apply validation middleware here
     handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
 );
 
+// Route for predict with symbol validation
 app.get(
     '/v1/predict/:symbol',
+    validateInput, // Apply validation middleware here
     handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
 );
+
+// Route for RSI with ticker validation
 app.get(
     '/v1/rsi/:ticker',
+    validateInput, // Apply validation middleware here
     handleAPIRequest('summary-info', (params) => `${apiUrl}rsi?ticker=${params.ticker}`)
 );
+
 
 async function getUserRequests(userId) {
     conn = await pool.getConnection();
