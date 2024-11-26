@@ -155,8 +155,8 @@ app.post('/login', async (req, res) => {
 // Existing imports and setup code remain the same
 
 // Add a PUT endpoint for updating user details
-app.put('/users/:email', async (req, res) => {
-    const { email } = req.params;
+app.put('/users/:userId', async (req, res) => {
+    const { userId } = req.params;
     const { firstName, requests } = req.body;
     const token = req.cookies.token; // Get the token from cookies
 
@@ -173,8 +173,8 @@ app.put('/users/:email', async (req, res) => {
             return res.status(403).send('Forbidden: Admins only');
         }
 
-        if (!email || (!firstName && requests === undefined)) {
-            return res.status(400).send('Invalid request. Provide email and at least one field to update.');
+        if (!userId || (!firstName && requests === undefined)) {
+            return res.status(400).send('Invalid request. Provide userId and at least one field to update.');
         }
 
         let conn;
@@ -194,14 +194,9 @@ app.put('/users/:email', async (req, res) => {
                 updateValues.push(firstName);
             }
 
-            if (requests !== undefined) {
-                updateFields.push('requests = ?');
-                updateValues.push(requests);
-            }
-
             updateValues.push(email);
 
-            const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE email = ?`;
+            const updateQuery = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
             await conn.query(updateQuery, updateValues);
 
             res.status(200).send('User updated successfully');
@@ -222,8 +217,8 @@ app.put('/users/:email', async (req, res) => {
 
 
 // Add a DELETE endpoint for deleting users
-app.delete('/users/:email', async (req, res) => {
-    const { email } = req.params;
+app.delete('/users/:userId', async (req, res) => {
+    const { userId } = req.params;
     const token = req.cookies.token; // Get the token from cookies
 
     if (!token) {
@@ -239,15 +234,15 @@ app.delete('/users/:email', async (req, res) => {
             return res.status(403).send('Forbidden: Admins only');
         }
 
-        if (!email) {
-            return res.status(400).send('Email is required');
+        if (!userId) {
+            return res.status(400).send('user ID is required');
         }
 
         let conn;
         try {
             conn = await pool.getConnection();
 
-            const result = await conn.query('DELETE FROM users WHERE email = ?', [email]);
+            const result = await conn.query('DELETE FROM users WHERE id = ?', [userId]);
             if (result.affectedRows === 0) {
                 return res.status(404).send('User not found');
             }
