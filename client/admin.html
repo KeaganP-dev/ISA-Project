@@ -67,6 +67,36 @@
     </div>
 
     <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Check if the user is authenticated
+        const response = await fetch('https://keaganpurtell.com/auth-check', {
+            method: 'GET',
+            credentials: 'include', // Include cookies for session validation
+        });
+
+        if (!response.ok) {
+            // If the user is not authenticated, redirect to the login page
+            console.warn('User not authenticated. Redirecting to login...');
+            console.log('not authenticated, redirecting')
+            window.location.href = '/';
+        } 
+
+        const data = await response.json();
+        
+        if (data.role !== "admin") {
+            console.log("admin")
+            console.log('not admin, redirecting')
+            window.location.href = '/dashboard.html';
+        }
+    } catch (error) {
+        console.error('Error checking authentication:', error);
+        // Redirect to login page in case of an error
+        window.location.href = '/';
+    }
+});
+
+
         // Fetch data from the Requests Summary endpoint
         async function fetchRequestsSummary() {
             try {
