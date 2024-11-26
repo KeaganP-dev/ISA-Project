@@ -14,6 +14,9 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const apiUrl = "https://isa-project-cxqx.onrender.com/";
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocs = require('./swaggerConfig.js');
+
 app.use(cors({
     origin: 'https://isa-project-client.netlify.app',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -24,6 +27,7 @@ app.use(cors({
 // Middlewares
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // MariaDB connection pool
 const pool = mariadb.createPool({
@@ -38,6 +42,8 @@ app.options('*', cors());
 
 // Middleware to redirect requests without version to /v1
 app.use((req, res, next) => {
+
+
     // Check if the path doesn't start with "/v1" or "/v2"
     if (!req.path.startsWith('/v1') && !req.path.startsWith('/v2')) {
         console.log(`Redirecting request to /v1${req.path}`);
@@ -70,7 +76,7 @@ app.use(async (req, res, next) => {
         console.log('inside try block');
         conn = await pool.getConnection();
 
-        url = '/'+req.originalUrl.split('/')[1];
+        url = '/' + req.originalUrl.split('/')[1];
 
         // Get or create endpoint ID
         let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [url, req.method]);
@@ -88,6 +94,45 @@ app.use(async (req, res, next) => {
     }
     next();
 });
+
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     summary: Register a new user
+ *     description: Create a new user with first name, email, and password.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - email
+ *               - password
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: John
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: john.doe@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: StrongP@ssw0rd
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: All fields are required or user already exists
+ *       500:
+ *         description: Server error
+ */
 
 // register endpoint
 app.post('/v1/register', async (req, res) => {
@@ -125,6 +170,58 @@ app.post('/v1/register', async (req, res) => {
     }
 });
 
+
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Log in a user
+ *     description: Authenticate a user using email and password. Returns a session token upon successful authentication.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The user's email address
+ *                 example: john.doe@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: The user's password
+ *                 example: myStrongPassword123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Login successful
+ *       400:
+ *         description: Invalid email or password, or missing required fields
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: All fields are required
+ *       500:
+ *         description: Server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Server error
+ */
 // Login endpoint
 app.post('/v1/login', async (req, res) => {
     const { email, password } = req.body;
@@ -157,6 +254,79 @@ app.post('/v1/login', async (req, res) => {
         if (conn) conn.end();
     }
 });
+
+/**
+ * @swagger
+ * /users/{email}:
+ *   put:
+ *     summary: Update user details (Admin only)
+ *     description: Allows an admin to update the email address of an existing user.
+ *     tags:
+ *       - Admin
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The current email of the user to update.
+ *         example: old.email@example.com
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               newEmail:
+ *                 type: string
+ *                 format: email
+ *                 description: The new email address for the user.
+ *                 example: new.email@example.com
+ *     responses:
+ *       200:
+ *         description: User updated successfully.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "User updated successfully"
+ *       400:
+ *         description: Invalid request or missing required fields.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Invalid request. Provide new email."
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Forbidden - Admin privileges required or invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Forbidden: Admins only"
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "User not found"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Server error"
+ */
 
 // Add a PUT endpoint for updating user details
 app.put('/v1/users/:email', async (req, res) => {
@@ -219,6 +389,67 @@ app.put('/v1/users/:email', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /users/{email}:
+ *   delete:
+ *     summary: Delete a user (Admin only)
+ *     description: Allows an admin to delete a user by their email address.
+ *     tags:
+ *       - Admin
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The email of the user to delete.
+ *         example: user.email@example.com
+ *     responses:
+ *       200:
+ *         description: User deleted successfully.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "User deleted successfully"
+ *       400:
+ *         description: Missing required email field.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Email is required"
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Forbidden - Admin privileges required or invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Forbidden: Admins only"
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "User not found"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Server error"
+ */
+
 // Add a DELETE endpoint for deleting users
 app.delete('/v1/users/:email', async (req, res) => {
     const { email } = req.params;
@@ -266,6 +497,49 @@ app.delete('/v1/users/:email', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api-consumption:
+ *   get:
+ *     summary: Get user's API consumption
+ *     description: Retrieve the total number of API requests made by the authenticated user.
+ *     tags:
+ *       - Usage
+ *     responses:
+ *       200:
+ *         description: Total API requests returned for the authenticated user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalRequests:
+ *                   type: integer
+ *                   description: Total number of API requests made by the user.
+ *                   example: 42
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Invalid token"
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
+
 // api-consumption endpoint
 app.get('/v1/api-consumption', async (req, res) => {
     const token = req.cookies.token;
@@ -273,13 +547,13 @@ app.get('/v1/api-consumption', async (req, res) => {
     if (!token) {
         return res.status(401).send('Unauthorized: No token provided');
     }
-    
+
 
     try {
         // Decode the token to get the user's email
         const decoded = jwt.verify(token, JWT_SECRET);
         const userId = decoded.userId;
-        
+
 
         let conn;
         try {
@@ -298,9 +572,62 @@ app.get('/v1/api-consumption', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /endpoint-requests:
+ *   get:
+ *     summary: Get total requests per endpoint (Admin only)
+ *     description: Retrieve the total number of API requests made to each endpoint.
+ *     tags:
+ *       - Admin
+ *     responses:
+ *       200:
+ *         description: Total requests per endpoint returned.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   method:
+ *                     type: string
+ *                     description: HTTP method of the endpoint.
+ *                     example: GET
+ *                   endpoint:
+ *                     type: string
+ *                     description: The endpoint path.
+ *                     example: /v1/login
+ *                   total_requests:
+ *                     type: integer
+ *                     description: Total number of requests made to the endpoint.
+ *                     example: 120
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Forbidden - Admin privileges required or invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Forbidden: Admins only"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Server error"
+ */
+
 // Endpoint: Total requests per endpoint (Admin only)
 app.get('/v1/endpoint-requests', async (req, res) => {
-    const token = req.cookies.token; 
+    const token = req.cookies.token;
 
     try {
         // Verify the token
@@ -343,6 +670,59 @@ app.get('/v1/endpoint-requests', async (req, res) => {
         res.status(401).send('Unauthorized: Invalid token');
     }
 });
+
+/**
+ * @swagger
+ * /user-requests:
+ *   get:
+ *     summary: Get total requests per user (Admin only)
+ *     description: Retrieve the total number of API requests made by each user.
+ *     tags:
+ *       - Admin
+ *     responses:
+ *       200:
+ *         description: Total requests per user returned.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   user_name:
+ *                     type: string
+ *                     description: The name of the user.
+ *                     example: John Doe
+ *                   email:
+ *                     type: string
+ *                     description: The email address of the user.
+ *                     example: john.doe@example.com
+ *                   total_requests:
+ *                     type: integer
+ *                     description: Total number of API requests made by the user.
+ *                     example: 85
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Forbidden - Admin privileges required or invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Forbidden: Admins only"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Server error"
+ */
 
 // Endpoint: Total requests per user (Admin only)
 app.get('/v1/user-requests', async (req, res) => {
@@ -390,6 +770,35 @@ app.get('/v1/user-requests', async (req, res) => {
     }
 });
 
+
+/**
+ * @swagger
+ * /auth-check:
+ *   get:
+ *     summary: Check if the user is authenticated
+ *     description: Verifies if the user is authenticated by checking their session token. Returns the user's role (admin or user) if authenticated.
+ *     tags:
+ *       - Authentication
+ *     responses:
+ *       200:
+ *         description: User is authenticated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 role:
+ *                   type: string
+ *                   description: The role of the authenticated user.
+ *                   example: admin
+ *       401:
+ *         description: Not authenticated.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Not authenticated
+ */
 // Endpoint: Check if the user is authenticated
 app.get('/v1/auth-check', (req, res) => {
     const token = req.cookies.token; // Assuming you're using cookies for authentication
@@ -402,10 +811,10 @@ app.get('/v1/auth-check', (req, res) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         if (decoded.isAdmin) {
-            res.json({ role: 'admin'});
+            res.json({ role: 'admin' });
             return res.status(200).send('Authenticated');
         } else if (decoded) {
-            res.json({ role: 'user'});
+            res.json({ role: 'user' });
             return res.status(200).send('Authenticated');
         } else {
             return res.status(401).send('Not authenticated');
@@ -447,15 +856,182 @@ const handleAPIRequest = (endpoint, apiUrlGenerator) => {
     };
 };
 
+/**
+ * @swagger
+ * /summary-info/{ticker}:
+ *   get:
+ *     summary: Get summary information for a ticker
+ *     description: Fetches summary information for a specific stock ticker.
+ *     tags:
+ *       - External API
+ *     parameters:
+ *       - in: path
+ *         name: ticker
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The stock ticker symbol (e.g., AAPL).
+ *         example: AAPL
+ *     responses:
+ *       200:
+ *         description: Summary information returned successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   description: Name of the stock.
+ *                   example: Apple Inc.
+ *                 price:
+ *                   type: number
+ *                   description: Current stock price.
+ *                   example: 150.23
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Invalid token"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
+
 app.get(
     '/v1/summary-info/:ticker',
     handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
 );
 
+/**
+ * @swagger
+ * /predict/{symbol}:
+ *   get:
+ *     summary: Predict stock performance
+ *     description: Fetches a prediction for a specific stock symbol based on historical data.
+ *     tags:
+ *       - External API
+ *     parameters:
+ *       - in: path
+ *         name: symbol
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The stock symbol to predict (e.g., TSLA).
+ *         example: TSLA
+ *     responses:
+ *       200:
+ *         description: Stock prediction returned successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 symbol:
+ *                   type: string
+ *                   description: The stock symbol.
+ *                   example: TSLA
+ *                 prediction:
+ *                   type: number
+ *                   description: Predicted stock price.
+ *                   example: 1200.50
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Invalid token"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
+
 app.get(
     '/v1/predict/:symbol',
     handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
 );
+
+
+/**
+ * @swagger
+ * /rsi/{ticker}:
+ *   get:
+ *     summary: Fetch RSI for a ticker
+ *     description: Retrieves the Relative Strength Index (RSI) for a specific stock ticker.
+ *     tags:
+ *       - External API
+ *     parameters:
+ *       - in: path
+ *         name: ticker
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The stock ticker symbol (e.g., MSFT).
+ *         example: MSFT
+ *     responses:
+ *       200:
+ *         description: RSI data returned successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ticker:
+ *                   type: string
+ *                   description: The stock ticker symbol.
+ *                   example: MSFT
+ *                 rsi:
+ *                   type: number
+ *                   description: The Relative Strength Index (RSI) value.
+ *                   example: 70.12
+ *       401:
+ *         description: Unauthorized - No token provided.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Unauthorized: No token provided"
+ *       403:
+ *         description: Invalid token.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Invalid token"
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: "Internal server error"
+ */
+
 app.get(
     '/v1/rsi/:ticker',
     handleAPIRequest('summary-info', (params) => `${apiUrl}rsi?ticker=${params.ticker}`)
