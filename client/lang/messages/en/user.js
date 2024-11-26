@@ -1,5 +1,5 @@
 const userMessages = {
-    // Existing messages
+    // login and registration
     registerTitle: "Register",
     firstNamePlaceholder: "First Name",
     emailPlaceholder: "Email",
@@ -10,7 +10,7 @@ const userMessages = {
     registrationError: "Error registering: ",
     loginError: "Error logging in: ",
 
-    // New messages for the dashboard
+    // Dashboard
     seeUserDetailsButton: "See User Details",
     userInfoTab: "User Info",
     adminInfoTab: "Admin Info",
@@ -24,4 +24,18 @@ const userMessages = {
     adminApiCalls: "API Calls",
     fetchUserError: "Could not fetch user details. Please try again later.",
     fetchPredictionError: "Failed to fetch prediction. Please try again later.",
+
+    pageTitle: "API Request Summaries",
+    pageHeader: "API Request Summaries",
+    endpointSummaryTitle: "Requests Summary by Endpoint",
+    userSummaryTitle: "User Requests Summary",
+    columnHeaders: {
+        method: "Method",
+        endpoint: "Endpoint",
+        totalRequests: "Total Requests",
+        userName: "User Name",
+        email: "Email",
+        totalRequestsUser: "Total Requests",
+        actions: "Actions"
+    }
 };

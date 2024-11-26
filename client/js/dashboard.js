@@ -1,3 +1,14 @@
+// Populate user-facing text on the dashboard page
+document.getElementById("adminTab").innerText = userMessages.adminInfoTab;
+document.getElementById("dashboardWelcome").innerText = userMessages.dashboardWelcome;
+document.getElementById("dashboardText").innerText = userMessages.dashboardText;
+document.getElementById("userInput").placeholder = userMessages.userInputPlaceholder;
+document.getElementById("adminDashboardTitle").innerText = userMessages.adminDashboardTitle;
+document.getElementById("adminName").innerText = userMessages.adminName;
+document.getElementById("adminEmail").innerText = userMessages.adminEmail;
+document.getElementById("adminApiCalls").innerText = userMessages.adminApiCalls;
+
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Check if the user is authenticated
@@ -28,18 +39,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/';
     }
 });
-
-
-// Populate user-facing text on the dashboard page
-document.getElementById("adminTab").innerText = userMessages.adminInfoTab;
-document.getElementById("dashboardWelcome").innerText = userMessages.dashboardWelcome;
-document.getElementById("dashboardText").innerText = userMessages.dashboardText;
-document.getElementById("userInput").placeholder = userMessages.userInputPlaceholder;
-document.getElementById("adminDashboardTitle").innerText = userMessages.adminDashboardTitle;
-document.getElementById("adminName").innerText = userMessages.adminName;
-document.getElementById("adminEmail").innerText = userMessages.adminEmail;
-document.getElementById("adminApiCalls").innerText = userMessages.adminApiCalls;
-
 
 async function getTickerSummary() {
     const ticker = document.getElementById('userInput').value;
