@@ -36,20 +36,10 @@ const pool = mariadb.createPool({
 
 app.options('*', cors());
 
-// Middleware to redirect requests without a version to /v1
-app.use((req, res, next) => {
-    const versionedPath = req.path.startsWith('/v1') || req.path.startsWith('/v2');
-    if (!versionedPath) {
-        console.log(`Redirecting request to /v1${req.path}`);
-        req.url = `/v1${req.url}`; // Update the URL to include /v1
-    }
-    next(); // Pass control to the next middleware
-});
-
 // Helper function to normalize paths
 const normalizePath = (path) => {
     // Replace dynamic segments (e.g., user IDs, UUIDs, or slugs) with a placeholder
-    return path.replace(/\/\d+|\/[a-fA-F0-9]{24}|\/[^\s/]+/g, '/:id');
+    return path.replace(/\/(users|summary-info|predict|rsi)\/[^\s/]+$/, '/$1/:id'); 
 };
 
 // Middleware to normalize and log endpoint calls
