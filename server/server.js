@@ -415,6 +415,7 @@ app.get('/v1/auth-check', (req, res) => {
 
     try {
         if (!token) {
+            console.log("no token")
             return res.status(401).send('Not authenticated');
         }
 

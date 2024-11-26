@@ -18,7 +18,7 @@ document.getElementById('actions-column-header').textContent = 'Actions';
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Check if the user is authenticated
-        const response = await fetch('https://keaganpurtell.com/auth-check', {
+        const response = await fetch('https://keaganpurtell.com/v1/auth-check', {
             method: 'GET',
             credentials: 'include', // Include cookies for session validation
         });
@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!response.ok) {
             // If the user is not authenticated, redirect to the login page
             console.warn('User not authenticated. Redirecting to login...');
-            console.log('not authenticated, redirecting')
             window.location.href = '/';
         } 
 
@@ -48,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Fetch data from the Requests Summary endpoint
         async function fetchRequestsSummary() {
             try {
-                const response = await fetch('https://keaganpurtell.com/endpoint-requests', {
+                const response = await fetch('https://keaganpurtell.com/v1/endpoint-requests', {
                     method: 'GET',
                     credentials: 'include',
                 });
@@ -65,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Fetch data from the User Requests Summary endpoint
         async function fetchUserRequestsSummary() {
             try {
-                const response = await fetch('https://keaganpurtell.com/user-requests', {
+                const response = await fetch('https://keaganpurtell.com/v1/user-requests', {
                     method: 'GET',
                     credentials: 'include',
                 });
@@ -122,7 +121,7 @@ async function editUser(email) {
     const newEmail = prompt(`Enter new email for ${email}:`);
     if (newEmail) {
         try {
-            const response = await fetch(`https://keaganpurtell.com/users/${encodeURIComponent(email)}`, {
+            const response = await fetch(`https://keaganpurtell.com/v1/users/${encodeURIComponent(email)}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -148,7 +147,7 @@ async function editUser(email) {
 async function deleteUser(email) {
     if (confirm(`Are you sure you want to delete the user with email ${email}?`)) {
         try {
-            const response = await fetch(`https://keaganpurtell.com/users/${encodeURIComponent(email)}`, {
+            const response = await fetch(`https://keaganpurtell.com/v1/users/${encodeURIComponent(email)}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
