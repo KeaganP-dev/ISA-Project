@@ -27,7 +27,7 @@ app.use(cors({
 // Middlewares
 app.use(bodyParser.json());
 app.use(cookieParser());
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+app.use('/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // MariaDB connection pool
 const pool = mariadb.createPool({
