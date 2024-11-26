@@ -416,6 +416,37 @@ app.get('/v1/auth-check', (req, res) => {
     }
 });
 
+const handleAPIRequest = (endpoint, apiUrlGenerator) => {
+    return async (req, res) => {
+        const { params } = req;
+        const token = req.cookies.token; // Get the token from cookies
+
+        if (!token) {
+            return res.status(401).send('Unauthorized: No token provided');
+        }
+
+        try {
+            const REQUEST_LIMIT = 20;
+            const { outOfRequests, userId } = await verifyTokenAndFetchUser(token, REQUEST_LIMIT);
+
+            const apiUrl = apiUrlGenerator(params);
+            const data = await fetchExternalAPI(apiUrl);
+
+            if (outOfRequests) {
+                data.warning = 'You have exceeded the request limit.';
+            }
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.error('Error:', error.message);
+            if (error instanceof jwt.JsonWebTokenError) {
+                return res.status(403).send('Invalid token');
+            }
+            res.status(500).send(error.message);
+        }
+    };
+};
+
 app.get(
     '/v1/summary-info/:ticker',
     handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
@@ -468,38 +499,6 @@ const fetchExternalAPI = async (url) => {
         throw new Error('Failed to fetch data from external API');
     }
 };
-
-const handleAPIRequest = (endpoint, apiUrlGenerator) => {
-    return async (req, res) => {
-        const { params } = req;
-        const token = req.cookies.token; // Get the token from cookies
-
-        if (!token) {
-            return res.status(401).send('Unauthorized: No token provided');
-        }
-
-        try {
-            const REQUEST_LIMIT = 20;
-            const { outOfRequests, userId } = await verifyTokenAndFetchUser(token, REQUEST_LIMIT);
-
-            const apiUrl = apiUrlGenerator(params);
-            const data = await fetchExternalAPI(apiUrl);
-
-            if (outOfRequests) {
-                data.warning = 'You have exceeded the request limit.';
-            }
-
-            res.status(200).json(data);
-        } catch (error) {
-            console.error('Error:', error.message);
-            if (error instanceof jwt.JsonWebTokenError) {
-                return res.status(403).send('Invalid token');
-            }
-            res.status(500).send(error.message);
-        }
-    };
-};
-
 
 // Start server
 app.listen(PORT, () => {
