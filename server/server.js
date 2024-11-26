@@ -63,9 +63,9 @@ app.use(async (req, res, next) => {
         url = '/'+req.originalUrl.split('/')[0];
 
         // Get or create endpoint ID
-        let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [req.originalUrl, req.method]);
+        let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [url, req.method]);
         if (!endpoint) {
-            const result = await conn.query('INSERT INTO endpoints (endpoint, method) VALUES (?, ?)', [req.originalUrl, req.method]);
+            const result = await conn.query('INSERT INTO endpoints (endpoint, method) VALUES (?, ?)', [url, req.method]);
             endpoint = { id: result.insertId };
         }
 
