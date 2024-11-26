@@ -60,7 +60,7 @@ app.use(async (req, res, next) => {
         console.log('inside try block');
         conn = await pool.getConnection();
 
-        url = '/'+req.originalUrl.split('/')[0];
+        url = '/'+req.originalUrl.split('/')[1];
 
         // Get or create endpoint ID
         let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [url, req.method]);
