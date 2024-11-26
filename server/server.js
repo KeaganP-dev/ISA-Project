@@ -36,75 +36,90 @@ const pool = mariadb.createPool({
 
 app.options('*', cors());
 
-// Middleware to redirect requests without version to /v1
+const jwt = require('jsonwebtoken'); // Ensure JWT library is imported
+const pool = require('./db'); // Replace with your actual database connection pool
+
+// Middleware to redirect requests without a version to /v1
 app.use((req, res, next) => {
-    // Check if the path doesn't start with "/v1" or "/v2"
-    if (!req.path.startsWith('/v1') && !req.path.startsWith('/v2')) {
+    const versionedPath = req.path.startsWith('/v1') || req.path.startsWith('/v2');
+    if (!versionedPath) {
         console.log(`Redirecting request to /v1${req.path}`);
         req.url = `/v1${req.url}`; // Update the URL to include /v1
     }
     next(); // Pass control to the next middleware
 });
 
+// Helper function to normalize paths
 const normalizePath = (path) => {
-    // Replace dynamic segments (e.g., user IDs) with placeholders
+    // Replace dynamic segments (e.g., user IDs, UUIDs, or slugs) with a placeholder
     return path.replace(/\/\d+|\/[a-fA-F0-9]{24}|\/[^\s/]+/g, '/:id');
 };
 
+// Middleware to normalize and log endpoint calls
 app.use((req, res, next) => {
     const normalizedPath = normalizePath(req.path); // Normalize the path
     console.log(`Endpoint called: ${req.method} ${normalizedPath}`);
-
-    // Optionally, save this to the database if needed
-    // Example:
-    // await pool.query('INSERT INTO logs (method, endpoint) VALUES (?, ?)', [req.method, normalizedPath]);
-
-    next();
+    req.normalizedPath = normalizedPath; // Attach normalized path to `req` for later use
+    next(); // Pass control to the next middleware
 });
-
 
 // Middleware to log requests in the database
 app.use(async (req, res, next) => {
-    console.log("Request received");
-    console.log(req.originalUrl);
+    const token = req.cookies?.token; // Safely access cookies
+    let user = null;
 
-    const token = req.cookies.token;
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        user = decoded.userId;
+    // Decode JWT token to extract user ID
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET); // Ensure JWT_SECRET is defined
+            user = decoded.userId;
+        } catch (jwtError) {
+            console.warn('Invalid or expired token:', jwtError.message);
+        }
     }
-    catch (jwtError) {
-        user = null;
+
+    if (!user || !req.normalizedPath) {
+        return next(); // Skip logging if no user ID or normalized path
     }
-
-    console.log(user);
-
-    console.log(req.method);
-    if (!user || !req.originalUrl) return next(); // Skip if no userId or URL available
 
     let conn;
     try {
-        console.log('inside try block');
-        conn = await pool.getConnection();
+        conn = await pool.getConnection(); // Establish a connection to the database
 
-        url = normalizedPath
+        // Check if the endpoint already exists
+        const [existingEndpoint] = await conn.query(
+            'SELECT id FROM endpoints WHERE endpoint = ? AND method = ?',
+            [req.normalizedPath, req.method]
+        );
 
-        // Get or create endpoint ID
-        let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [url, req.method]);
-        if (!endpoint) {
-            const result = await conn.query('INSERT INTO endpoints (endpoint, method) VALUES (?, ?)', [url, req.method]);
-            endpoint = { id: result.insertId };
+        let endpointId;
+        if (existingEndpoint) {
+            endpointId = existingEndpoint.id; // Use the existing endpoint ID
+        } else {
+            // Insert a new endpoint if not found
+            const result = await conn.query(
+                'INSERT INTO endpoints (endpoint, method) VALUES (?, ?)',
+                [req.normalizedPath, req.method]
+            );
+            endpointId = result.insertId;
         }
 
-        // Insert request record
-        await conn.query('INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())', [user, endpoint.id]);
+        // Log the request
+        await conn.query(
+            'INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())',
+            [user, endpointId]
+        );
+
+        console.log(`Logged request: User ${user}, Endpoint ${req.normalizedPath}`);
     } catch (err) {
         console.error('Error logging request:', err.message);
     } finally {
-        if (conn) conn.end();
+        if (conn) conn.release(); // Always release the connection back to the pool
     }
-    next();
+
+    next(); // Pass control to the next middleware
 });
+
 
 // register endpoint
 app.post('/v1/register', async (req, res) => {
