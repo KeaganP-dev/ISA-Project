@@ -36,9 +36,6 @@ const pool = mariadb.createPool({
 
 app.options('*', cors());
 
-const jwt = require('jsonwebtoken'); // Ensure JWT library is imported
-const pool = require('./db'); // Replace with your actual database connection pool
-
 // Middleware to redirect requests without a version to /v1
 app.use((req, res, next) => {
     const versionedPath = req.path.startsWith('/v1') || req.path.startsWith('/v2');
