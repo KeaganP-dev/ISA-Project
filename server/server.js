@@ -46,6 +46,23 @@ app.use((req, res, next) => {
     next(); // Pass control to the next middleware
 });
 
+const normalizePath = (path) => {
+    // Replace dynamic segments (e.g., user IDs) with placeholders
+    return path.replace(/\/\d+|\/[a-fA-F0-9]{24}|\/[^\s/]+/g, '/:id');
+};
+
+app.use((req, res, next) => {
+    const normalizedPath = normalizePath(req.path); // Normalize the path
+    console.log(`Endpoint called: ${req.method} ${normalizedPath}`);
+
+    // Optionally, save this to the database if needed
+    // Example:
+    // await pool.query('INSERT INTO logs (method, endpoint) VALUES (?, ?)', [req.method, normalizedPath]);
+
+    next();
+});
+
+
 // Middleware to log requests in the database
 app.use(async (req, res, next) => {
     console.log("Request received");
@@ -70,7 +87,7 @@ app.use(async (req, res, next) => {
         console.log('inside try block');
         conn = await pool.getConnection();
 
-        url = '/'+req.originalUrl.split('/')[1];
+        url = normalizedPath
 
         // Get or create endpoint ID
         let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [url, req.method]);

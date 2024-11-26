@@ -12,7 +12,7 @@ document.getElementById("adminApiCalls").innerText = userMessages.adminApiCalls;
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Check if the user is authenticated
-        const response = await fetch('https://keaganpurtell.com/auth-check', {
+        const response = await fetch('https://keaganpurtell.com/v1/auth-check', {
             method: 'GET',
             credentials: 'include', // Include cookies for session validation
         });
@@ -48,7 +48,7 @@ async function getTickerSummary() {
     }
 
     try {
-        const response = await fetch(`https://keaganpurtell.com/summary-info/${ticker}`, {
+        const response = await fetch(`https://keaganpurtell.com/v1/summary-info/${ticker}`, {
             method: 'GET',
             credentials: 'include',
         });
@@ -74,7 +74,7 @@ async function getRSIData() {
     }
 
     try {
-        const response = await fetch(`https://keaganpurtell.com/rsi/${ticker}`, {
+        const response = await fetch(`https://keaganpurtell.com/v1/rsi/${ticker}`, {
             method: 'GET',
             credentials: 'include',
         });
@@ -101,7 +101,7 @@ async function getPrediction() {
     }
 
     try {
-        const response = await fetch(`https://keaganpurtell.com/predict/${ticker}`, {
+        const response = await fetch(`https://keaganpurtell.com/v1/predict/${ticker}`, {
             method: 'GET',
             credentials: 'include',
         });
@@ -124,7 +124,7 @@ async function fetchApiConsumption() {
     apiConsumptionElement.innerText = 'Fetching your API usage...'; // Show a loading message
 
     try {
-        const response = await fetch('https://keaganpurtell.com/api-consumption', {
+        const response = await fetch('https://keaganpurtell.com/v1/api-consumption', {
             method: 'GET',
             credentials: 'include',
         });
