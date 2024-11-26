@@ -111,6 +111,15 @@ app.post('/register', async (req, res) => {
         // Log the request with the newly created user ID
         req.userId = result.insertId;
 
+        let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', ['/register', req.method]);
+        if (!endpoint) {
+            const result = await conn.query('INSERT INTO endpoints (endpoint, method) VALUES (?, ?)', ['/register', req.method]);
+            endpoint = { id: result.insertId };
+        }
+
+        // Insert request record
+        await conn.query('INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())', [req.userId, endpoint.id]);
+
         res.status(201).send('User registered successfully');
     } catch (err) {
         res.status(500).send('Server error');
