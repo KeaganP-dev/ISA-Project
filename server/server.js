@@ -40,60 +40,77 @@ const pool = mariadb.createPool({
 
 app.options('*', cors());
 
-// Middleware to redirect requests without version to /v1
+// Helper function to normalize paths
+const normalizePath = (path) => {
+    // Replace dynamic segments (e.g., user IDs, UUIDs, or slugs) with a placeholder
+    return path.replace(/\/(users|summary-info|predict|rsi)\/[^\s/]+$/, '/$1/:id');
+};
+
+// Middleware to normalize and log endpoint calls
 app.use((req, res, next) => {
-
-
-    // Check if the path doesn't start with "/v1" or "/v2"
-    if (!req.path.startsWith('/v1') && !req.path.startsWith('/v2')) {
-        console.log(`Redirecting request to /v1${req.path}`);
-        req.url = `/v1${req.url}`; // Update the URL to include /v1
-    }
+    const normalizedPath = normalizePath(req.path); // Normalize the path
+    console.log(`Endpoint called: ${req.method} ${normalizedPath}`);
+    req.normalizedPath = normalizedPath; // Attach normalized path to `req` for later use
     next(); // Pass control to the next middleware
 });
 
 // Middleware to log requests in the database
 app.use(async (req, res, next) => {
-    console.log("Request received");
-    console.log(req.originalUrl);
+    const token = req.cookies?.token; // Safely access cookies
+    let user = null;
 
-    const token = req.cookies.token;
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        user = decoded.userId;
+    // Decode JWT token to extract user ID
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET); // Ensure JWT_SECRET is defined
+            user = decoded.userId;
+        } catch (jwtError) {
+            console.warn('Invalid or expired token:', jwtError.message);
+        }
     }
-    catch (jwtError) {
-        user = null;
+
+    if (!user || !req.normalizedPath) {
+        return next(); // Skip logging if no user ID or normalized path
     }
-
-    console.log(user);
-
-    console.log(req.method);
-    if (!user || !req.originalUrl) return next(); // Skip if no userId or URL available
 
     let conn;
     try {
-        console.log('inside try block');
-        conn = await pool.getConnection();
+        conn = await pool.getConnection(); // Establish a connection to the database
 
-        url = '/' + req.originalUrl.split('/')[1];
+        // Check if the endpoint already exists
+        const [existingEndpoint] = await conn.query(
+            'SELECT id FROM endpoints WHERE endpoint = ? AND method = ?',
+            [req.normalizedPath, req.method]
+        );
 
-        // Get or create endpoint ID
-        let [endpoint] = await conn.query('SELECT id FROM endpoints WHERE endpoint = ? AND method = ?', [url, req.method]);
-        if (!endpoint) {
-            const result = await conn.query('INSERT INTO endpoints (endpoint, method) VALUES (?, ?)', [url, req.method]);
-            endpoint = { id: result.insertId };
+        let endpointId;
+        if (existingEndpoint) {
+            endpointId = existingEndpoint.id; // Use the existing endpoint ID
+        } else {
+            // Insert a new endpoint if not found
+            const result = await conn.query(
+                'INSERT INTO endpoints (endpoint, method) VALUES (?, ?)',
+                [req.normalizedPath, req.method]
+            );
+            endpointId = result.insertId;
         }
 
-        // Insert request record
-        await conn.query('INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())', [user, endpoint.id]);
+        // Log the request
+        await conn.query(
+            'INSERT INTO requests (user_id, endpoint_id, timestamp) VALUES (?, ?, NOW())',
+            [user, endpointId]
+        );
+
+        console.log(`Logged request: User ${user}, Endpoint ${req.normalizedPath}`);
     } catch (err) {
         console.error('Error logging request:', err.message);
     } finally {
-        if (conn) conn.end();
+        if (conn) conn.release(); // Always release the connection back to the pool
     }
-    next();
+
+    next(); // Pass control to the next middleware
 });
+
 
 /**
  * @swagger
@@ -138,6 +155,12 @@ app.use(async (req, res, next) => {
 app.post('/v1/register', async (req, res) => {
     const { firstName, email, password } = req.body;
     if (!firstName || !email || !password) return res.status(400).send('All fields are required');
+
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!emailRegex.test(email)) {
+        return; // Stop the function if the email is invalid
+    }
 
     let conn;
     try {
@@ -364,6 +387,12 @@ app.put('/v1/users/:email', async (req, res) => {
             const updateValues = [];
 
             if (newEmail) {
+                const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                if (!emailRegex.test(newEmail)) {
+                    return; // Stop the function if the email is invalid
+                }
+
                 updateFields.push('email = ?');
                 updateValues.push(newEmail);
             }
@@ -802,28 +831,33 @@ app.get('/v1/user-requests', async (req, res) => {
 // Endpoint: Check if the user is authenticated
 app.get('/v1/auth-check', (req, res) => {
     const token = req.cookies.token; // Assuming you're using cookies for authentication
+    console.log('endpoint auth-check called');
 
     try {
         if (!token) {
+            console.log("no token");
             return res.status(401).send('Not authenticated');
         }
+        console.log("there is a token");
 
         const decoded = jwt.verify(token, JWT_SECRET);
 
         if (decoded.isAdmin) {
-            res.json({ role: 'admin' });
-            return res.status(200).send('Authenticated');
+            console.log("admin");
+            return res.json({ role: 'admin' }); // Send admin role
         } else if (decoded) {
-            res.json({ role: 'user' });
-            return res.status(200).send('Authenticated');
+            console.log("user");
+            return res.json({ role: 'user' }); // Send user role
         } else {
+            console.log("not authenticated");
             return res.status(401).send('Not authenticated');
         }
     } catch (err) {
         console.error('Authentication check error:', err.message);
-        res.status(401).send('Not authenticated');
+        return res.status(401).send('Not authenticated');
     }
 });
+
 
 const handleAPIRequest = (endpoint, apiUrlGenerator) => {
     return async (req, res) => {
@@ -855,6 +889,23 @@ const handleAPIRequest = (endpoint, apiUrlGenerator) => {
         }
     };
 };
+
+// Validation middleware
+function validateInput(req, res, next) {
+    const regex = /^[a-zA-Z0-9]{1,4}$/;
+    const { ticker, symbol } = req.params;
+
+    // Check if ticker or symbol is provided and matches the regex
+    if (ticker && !regex.test(ticker)) {
+        return res.status(400).json({ error: 'Invalid ticker format. It should be 1-4 alphanumeric characters.' });
+    }
+
+    if (symbol && !regex.test(symbol)) {
+        return res.status(400).json({ error: 'Invalid symbol format. It should be 1-4 alphanumeric characters.' });
+    }
+
+    next(); // Proceed if validation passes
+}
 
 /**
  * @swagger
@@ -911,8 +962,10 @@ const handleAPIRequest = (endpoint, apiUrlGenerator) => {
  *               example: "Internal server error"
  */
 
+// Route for summary-info with ticker validation
 app.get(
     '/v1/summary-info/:ticker',
+    validateInput, // Apply validation middleware here
     handleAPIRequest('summary-info', (params) => `${apiUrl}summary-info?ticker=${params.ticker}`)
 );
 
@@ -971,11 +1024,12 @@ app.get(
  *               example: "Internal server error"
  */
 
+// Route for predict with symbol validation
 app.get(
     '/v1/predict/:symbol',
+    validateInput, // Apply validation middleware here
     handleAPIRequest('predict', (params) => `${apiUrl}predict?symbol=${params.symbol}`)
 );
-
 
 /**
  * @swagger
@@ -1032,10 +1086,13 @@ app.get(
  *               example: "Internal server error"
  */
 
+// Route for RSI with ticker validation
 app.get(
     '/v1/rsi/:ticker',
+    validateInput, // Apply validation middleware here
     handleAPIRequest('summary-info', (params) => `${apiUrl}rsi?ticker=${params.ticker}`)
 );
+
 
 async function getUserRequests(userId) {
     conn = await pool.getConnection();

@@ -16,7 +16,7 @@ async function register() {
     const password = document.getElementById('registerPassword').value;
 
     try {
-        const response = await fetch('https://keaganpurtell.com/register', {
+        const response = await fetch('https://keaganpurtell.com/v1/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -36,7 +36,7 @@ async function login() {
     const password = document.getElementById('loginPassword').value;
 
     try {
-        const response = await fetch('https://keaganpurtell.com/login', {
+        const response = await fetch('https://keaganpurtell.com/v1/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
