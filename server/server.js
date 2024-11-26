@@ -412,34 +412,33 @@ app.get('/v1/user-requests', async (req, res) => {
 // Endpoint: Check if the user is authenticated
 app.get('/v1/auth-check', (req, res) => {
     const token = req.cookies.token; // Assuming you're using cookies for authentication
-    console.log('endpoint auth-check called')
+    console.log('endpoint auth-check called');
 
     try {
         if (!token) {
-            console.log("no token")
+            console.log("no token");
             return res.status(401).send('Not authenticated');
         }
-        console.log("there is a token")
+        console.log("there is a token");
 
         const decoded = jwt.verify(token, JWT_SECRET);
 
         if (decoded.isAdmin) {
-            res.json({ role: 'admin'});
-            console.log("admin")
-            return res.status(200).send('Authenticated');
+            console.log("admin");
+            return res.json({ role: 'admin' }); // Send admin role
         } else if (decoded) {
-            res.json({ role: 'user'});
-            console.log("user")
-            return res.status(200).send('Authenticated');
+            console.log("user");
+            return res.json({ role: 'user' }); // Send user role
         } else {
-            console.log("not authenticated")
+            console.log("not authenticated");
             return res.status(401).send('Not authenticated');
         }
     } catch (err) {
         console.error('Authentication check error:', err.message);
-        res.status(401).send('Not authenticated');
+        return res.status(401).send('Not authenticated');
     }
 });
+
 
 const handleAPIRequest = (endpoint, apiUrlGenerator) => {
     return async (req, res) => {
