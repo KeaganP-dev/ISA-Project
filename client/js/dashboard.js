@@ -7,10 +7,10 @@ document.getElementById("adminDashboardTitle").innerText = userMessages.adminDas
 document.getElementById("adminName").innerText = userMessages.adminName;
 document.getElementById("adminEmail").innerText = userMessages.adminEmail;
 document.getElementById("adminApiCalls").innerText = userMessages.adminApiCalls;
-document.getElementById("fetchApiConsumptionButton").innerText = userMessages.checkAPIUsage;
-document.getElementById("summaryButton").innerText = userMessages.getTickerSummary;
-document.getElementById("rsiButton").innerText = userMessages.getRSIData;
-document.getElementById("predictionButton").innerText = userMessages.getPrediction;
+// document.getElementById("fetchApiConsumptionButton").innerText = userMessages.checkAPIUsage;
+// document.getElementById("summaryButton").innerText = userMessages.getTickerSummary;
+// document.getElementById("rsiButton").innerText = userMessages.getRSIData;
+// document.getElementById("predictionButton").innerText = userMessages.getPrediction;
 
 
 document.addEventListener('DOMContentLoaded', async () => {
